@@ -93,7 +93,7 @@ function startVocabPractice() {
 
   currentTopic = 'vocab_practice';
   currentExercises = shuffle(exercises);
-  currentIndex = 0; xp = 0; correct = 0; answered = false;
+  currentIndex = 0; xp = 0; correct = 0; answered = false; mistakes = [];
   showScreen('lesson');
   document.getElementById('progress-fill').style.width = '0%';
   document.getElementById('xp-counter').textContent = '0 XP';

@@ -12,7 +12,10 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git rm:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(find /Users/weezy2945/Desktop/parlami -not -path */node_modules/* -not -path */.git/* -not -path */.claude/* -type f)",
+      "Bash(node --check server.js)",
+      "Bash(node --check public/js/speech.js)"
     ],
     "additionalDirectories": [
       "/Users/weezy2945/Desktop/parlami/public"

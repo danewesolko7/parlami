@@ -52,7 +52,7 @@ function startDailyReview() {
 
   currentTopic = 'daily_review';
   currentExercises = exercises;
-  currentIndex = 0; xp = 0; correct = 0; answered = false;
+  currentIndex = 0; xp = 0; correct = 0; answered = false; mistakes = [];
   showScreen('lesson');
   document.getElementById('progress-fill').style.width = '0%';
   document.getElementById('xp-counter').textContent = '0 XP';
@@ -145,35 +145,114 @@ function updateHomeProgress() {
   }
   renderCourseMap();
   renderJourneyCard();
+  renderAchievements();
 }
 
-// ── Patch renderCourseMap to add difficulty badges ────────────
+// ── Skill-tree unlock logic ────────────────────────────────────
+function isLessonUnlocked(unitIdx, lessonIdx, stats) {
+  const lessonId = COURSE[unitIdx].lessons[lessonIdx].id;
+  if (stats.lessons[lessonId]?.completions > 0) return true;
+  if (unitIdx === 0 && lessonIdx === 0) return true;
+  if (lessonIdx > 0) {
+    const prevId = COURSE[unitIdx].lessons[lessonIdx - 1].id;
+    return !!(stats.lessons[prevId]?.completions > 0);
+  }
+  if (lessonIdx === 0 && unitIdx > 0) {
+    const prevUnit = COURSE[unitIdx - 1];
+    const doneCount = prevUnit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length;
+    return doneCount >= Math.ceil(prevUnit.lessons.length * 0.7);
+  }
+  return false;
+}
+
+// ── Skill-tree course map ──────────────────────────────────────
 function renderCourseMap() {
   const stats = loadStats();
   const el = document.getElementById('course-map');
   if (!el) return;
-  el.innerHTML = COURSE.map(unit => {
-    const done = unit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length;
-    return `<div class="unit-section">
-      <div class="unit-header" style="background:${unit.bg};border-left:3px solid ${unit.color};">
-        <div class="unit-title" style="color:${unit.color}">${unit.title}</div>
-        <div class="unit-prog" style="color:${unit.color}">${done}/${unit.lessons.length}</div>
+
+  let firstAvailableMarked = false;
+
+  const html = COURSE.map((unit, unitIdx) => {
+    const lessons = unit.lessons;
+    const doneCount = lessons.filter(l => stats.lessons[l.id]?.completions > 0).length;
+    const allDone = doneCount === lessons.length;
+    const firstUnlocked = isLessonUnlocked(unitIdx, 0, stats);
+
+    // Completed unit: compact dot row
+    if (allDone) {
+      const dots = lessons.map(() => `<span class="ucr-dot">✓</span>`).join('');
+      return `<div class="unit-block unit-done">
+        <div class="unit-header-bar" style="background:${unit.color};">
+          <span class="uhb-title">${unit.title}</span>
+          <span class="uhb-badge">Complete ✓</span>
+        </div>
+        <div class="unit-complete-row">${dots}</div>
+      </div>`;
+    }
+
+    // Future locked unit
+    if (!firstUnlocked) {
+      const prevUnit = COURSE[unitIdx - 1];
+      const prevDone = prevUnit ? prevUnit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length : 0;
+      const needed = prevUnit ? Math.ceil(prevUnit.lessons.length * 0.7) - prevDone : 0;
+      const note = needed > 0 ? `Complete ${needed} more in Unit ${unitIdx} to unlock` : 'Almost unlocked!';
+      return `<div class="unit-block unit-locked">
+        <div class="unit-header-bar unit-header-locked">
+          <span class="uhb-title">${unit.title}</span>
+          <span class="uhb-lock">🔒</span>
+        </div>
+        <div class="uhb-unlock-note">${note}</div>
+      </div>`;
+    }
+
+    // Active unit: full zigzag skill tree
+    const nodesHtml = lessons.map((lesson, lessonIdx) => {
+      const unlocked = isLessonUnlocked(unitIdx, lessonIdx, stats);
+      const done = !!(stats.lessons[lesson.id]?.completions > 0);
+      let state;
+      if (done) { state = 'done'; }
+      else if (!unlocked) { state = 'locked'; }
+      else if (!firstAvailableMarked) { state = 'current'; firstAvailableMarked = true; }
+      else { state = 'open'; }
+
+      const side = lessonIdx % 2 === 0 ? 'left' : 'right';
+      const onclick = state !== 'locked' ? `onclick="startLesson('${lesson.id}')"` : '';
+      const ring = state === 'current' ? '<div class="tn-ring"></div>' : '';
+      let inner;
+      if (state === 'done') {
+        inner = `<span class="tn-check">✓</span>`;
+      } else if (state === 'locked') {
+        inner = `<svg class="tn-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
+      } else {
+        inner = `<span class="tn-emoji">${lesson.emoji}</span>`;
+      }
+
+      const completions = stats.lessons[lesson.id]?.completions || 0;
+      const meta = done ? `Completed ${completions}×`
+        : state === 'current' ? 'Start →'
+        : state === 'open' ? lesson.desc
+        : 'Complete previous lesson';
+
+      return `<div class="tree-node tree-node-${side} tree-state-${state}" ${onclick}>
+        <div class="tn-circle">${ring}${inner}</div>
+        <div class="tn-label">
+          <div class="tn-title">${lesson.title}</div>
+          <div class="tn-meta">${meta}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="unit-block unit-active">
+      <div class="unit-header-bar" style="background:${unit.color};">
+        <span class="uhb-title">${unit.title}</span>
+        <span class="uhb-prog">${doneCount}/${lessons.length}</span>
       </div>
-      <div class="lesson-grid">
-        ${unit.lessons.map(lesson => {
-          const ls = stats.lessons[lesson.id];
-          const completed = ls && ls.completions > 0;
-          return `<div class="lesson-card" data-topic="${lesson.id}" onclick="startLesson('${lesson.id}')">
-            <span class="ce">${lesson.emoji}</span>
-            <div class="ct">${lesson.title}</div>
-            <div class="cd">${lesson.desc}</div>
-            ${completed ? `<span class="cb" style="background:var(--green-light);color:var(--green);">✓ ${ls.completions}×</span>` : ''}
-            ${diffBadge(lesson.id)}
-          </div>`;
-        }).join('')}
-      </div>
+      <div class="tree-unit-nodes">${nodesHtml}</div>
     </div>`;
   }).join('');
+
+  el.innerHTML = html;
 }
 
 // Init

@@ -10,7 +10,7 @@ const HARDCODED = {
     {type:'multiple_choice',prompt:'Which is the formal way to say "how are you"?',options:['Come stai?','Come va?','Come sta?','Stai bene?'],answer:'Come sta?',hint:'Formal Italian uses "Lei" — the verb changes to third person'},
     {type:'fill_blank',prompt:'___ di conoscerti! (Nice to meet you!)',hint:'The Italian word for "pleasure"',answer:'piacere',placeholder:'Type the missing word...'},
     {type:'translate',prompt:'Translate to Italian:',english:'Good night, see you tomorrow',answer:'buonanotte ci vediamo domani',words:['buonanotte','ci','vediamo','domani','arrivederci','a','presto','sera','ciao']},
-    {type:'listening',prompt:'Listen and type what you hear:',audio:'Buongiorno, come sta? Tutto bene?',answer:'buongiorno come sta tutto bene',hint:'A formal morning greeting'},
+    {type:'speaking',subtype:'repeat',prompt:'Say this greeting out loud:',audio:'Buongiorno, come sta?',answer:'buongiorno come sta',hint:'Meaning: "Good morning, how are you?" (formal)'},
   ],
   numbers:[
     {type:'match_pairs',prompt:'Match numbers to Italian',pairs:[['Uno','1'],['Due','2'],['Tre','3'],['Quattro','4']]},
@@ -46,7 +46,7 @@ const HARDCODED = {
     {type:'multiple_choice',prompt:'What does "Non capisco" mean?',options:['I don\'t speak Italian','I don\'t understand','I don\'t know','I can\'t hear'],answer:'I don\'t understand',hint:'"Capire" = to understand'},
     {type:'fill_blank',prompt:'___ più lentamente, per favore. (Please speak more slowly.)',hint:'Formal imperative of "parlare" (speak)',answer:'parli',placeholder:'Type the verb...'},
     {type:'translate',prompt:'Translate to Italian:',english:'Can you repeat that please?',answer:'può ripetere per favore',words:['può','ripetere','per','favore','parlare','lento','capisco','ancora','sì']},
-    {type:'listening',prompt:'Listen and type what you hear:',audio:'Non capisco, può ripetere più lentamente?',answer:'non capisco può ripetere più lentamente',hint:'Asking someone to slow down'},
+    {type:'speaking',subtype:'translate',prompt:'Say this in Italian:',english:'My name is Sofia and I am fine, thanks!',audio:'Mi chiamo Sofia e sto bene, grazie!',answer:'mi chiamo sofia e sto bene grazie',hint:'Say: "Mi chiamo Sofia e sto bene, grazie!"'},
   ],
   food:[
     {type:'multiple_choice',prompt:'How do you say "water"?',options:['Vino','Acqua','Pane','Formaggio'],answer:'Acqua',hint:'Aqua is its Latin root'},

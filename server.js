@@ -345,6 +345,37 @@ function buildExercises(topic, words, sentences, translations, definitions) {
     });
   }
 
+  // 7. Speaking — repeat a short Tatoeba sentence
+  const shortSents = sentences.filter(s => {
+    const wds = s.italian.split(' ');
+    return wds.length >= 3 && wds.length <= 7;
+  });
+  if (shortSents.length > 0) {
+    const sent = shortSents[0];
+    exercises.push({
+      type: 'speaking',
+      subtype: 'repeat',
+      prompt: 'Say this phrase out loud:',
+      audio: sent.italian,
+      answer: sent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
+      hint: `Meaning: "${sent.english}"`
+    });
+  }
+
+  // 8. Speaking — translate to Italian and say it
+  if (pairs.length >= 2) {
+    const target = pairs[Math.min(2, pairs.length - 1)];
+    exercises.push({
+      type: 'speaking',
+      subtype: 'translate',
+      prompt: 'Say this in Italian:',
+      english: target[1],
+      audio: target[0],
+      answer: target[0].toLowerCase().replace(/[.,!?;:]/g, ''),
+      hint: `Say: "${target[0]}"`
+    });
+  }
+
   return exercises.slice(0, 10);
 }
 

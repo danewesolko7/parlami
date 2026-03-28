@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"console.log\\(''''node ok''''\\)\")",
+      "Bash(grep -l \"renderExercise\\\\|renderCourseMap\\\\|updateHomeProgress\\\\|calcStreak\\\\|startDailyReview\\\\|showGrammarRef\\\\|filterVocab\\\\|showVocabLibrary\" /Users/weezy2945/Desktop/parlami/public/js/*.js)",
+      "Bash(curl -s http://localhost:3000/api/vocab/present_tense)",
+      "Bash(curl -s \"http://localhost:3000/api/vocab/present%20tense\")",
+      "Bash(lsof -ti:3000)",
+      "Bash(curl -v http://localhost:3000/api/vocab/present_tense)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:3000/api/lesson -H \"Content-Type: application/json\" -d '{\"\"\"\"topic\"\"\"\":\"\"\"\"present tense\"\"\"\"}')",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/weezy2945/Desktop/parlami/public"
+    ]
+  }
+}

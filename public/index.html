@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parlami — Learn Italian</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-flag">🇮🇹</div>
+  <h1 class="home-title">Parlami</h1>
+  <p class="home-subtitle">Real Italian from real sources.<br>Vocabulary, sentences & exercises — live from the web.</p>
+  <div id="home-stats-bar" style="display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;">
+    <span class="streak-chip" id="streak-chip" style="display:none;">🔥 <span id="home-streak">0</span> day streak</span>
+    <span class="stat-chip xp">⭐ <span id="home-xp">0</span> XP</span>
+    <span class="stat-chip" style="background:var(--blue-light);color:var(--blue);cursor:pointer;" onclick="showVocabLibrary()">📚 <span id="home-words">0</span> words learned</span>
+    <span class="stat-chip" style="background:var(--purple-light);color:var(--purple);">✨ <span id="home-mastered">0</span> mastered</span>
+  </div>
+  <div class="home-actions" id="home-actions" style="display:none;">
+    <button class="action-btn review" onclick="startDailyReview()">📋 Daily Review</button>
+    <button class="action-btn grammar" onclick="showGrammarRef()">📐 Grammar Ref</button>
+  </div>
+
+  <div id="journey-card" class="journey-card"></div>
+
+  <div class="section-label">Your course</div>
+  <div id="course-map" style="width:100%;"></div>
+
+  <div class="section-label">Generate a lesson on any topic</div>
+  <div class="ai-panel">
+    <div class="custom-row">
+      <input class="custom-input" id="custom-topic" placeholder="e.g. sports, music, politics..." />
+      <button class="gen-btn" onclick="startGeneratedLesson()">Generate →</button>
+    </div>
+    <div class="source-tag">📡 Generated from Wiktionary + Tatoeba</div>
+  </div>
+
+  <div class="section-label">Look up any Italian word</div>
+  <div class="dict-panel">
+    <div class="dict-row">
+      <input class="custom-input" id="dict-input" placeholder="Type an Italian word..." onkeydown="if(event.key==='Enter')lookupWord()" />
+      <button class="gen-btn" style="background:var(--purple)" onclick="lookupWord()">Look up</button>
+    </div>
+    <div class="dict-result" id="dict-result"></div>
+    <div class="source-tag" style="margin-top:8px;">📖 Wiktionary definitions</div>
+  </div>
+
+  <div class="section-label">Real example sentences</div>
+  <div class="sentences-panel">
+    <div class="custom-row" style="margin-bottom:10px;">
+      <input class="custom-input" id="sent-input" placeholder="Search Italian sentences..." onkeydown="if(event.key==='Enter')searchSentences()" />
+      <button class="gen-btn" style="background:var(--amber)" onclick="searchSentences()">Search</button>
+    </div>
+    <div id="sentences-result"></div>
+    <div class="source-tag">💬 Tatoeba — human-written sentences</div>
+  </div>
+</div>
+
+<!-- LESSON -->
+<div id="screen-lesson" class="screen">
+  <div class="lesson-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="xp-badge" id="xp-counter">0 XP</div>
+  </div>
+  <div id="exercise-container"></div>
+</div>
+
+<!-- VOCAB LIBRARY -->
+<div id="screen-vocab" class="screen">
+  <div class="vocab-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="vocab-title">My Vocabulary</div>
+    <div id="vocab-count" style="font-size:13px;color:var(--text-muted);font-weight:500;"></div>
+    <button id="vocab-practice-btn" class="vocab-practice-btn" style="display:none" onclick="startVocabPractice()">Practice ▶</button>
+  </div>
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterVocab('all',this)">All</button>
+    <button class="filter-tab" onclick="filterVocab('struggling',this)">Struggling</button>
+    <button class="filter-tab" onclick="filterVocab('learning',this)">Learning</button>
+    <button class="filter-tab" onclick="filterVocab('strong',this)">Strong</button>
+    <button class="filter-tab" onclick="filterVocab('mastered',this)">Mastered</button>
+  </div>
+  <div id="vocab-grid" class="vocab-grid"></div>
+</div>
+
+<!-- GRAMMAR REFERENCE -->
+<div id="screen-grammar" class="screen">
+  <div class="grammar-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="grammar-title">Grammar Reference</div>
+  </div>
+
+  <div class="gram-section">
+    <h3>Present Tense — Regular Verbs</h3>
+    <table class="gram-table">
+      <tr><th>Pronoun</th><th class="gram-it">-ARE (parlare)</th><th class="gram-it">-ERE (scrivere)</th><th class="gram-it">-IRE (dormire)</th></tr>
+      <tr><td>io</td><td class="gram-it">parlo</td><td class="gram-it">scrivo</td><td class="gram-it">dormo</td></tr>
+      <tr><td>tu</td><td class="gram-it">parli</td><td class="gram-it">scrivi</td><td class="gram-it">dormi</td></tr>
+      <tr><td>lui/lei</td><td class="gram-it">parla</td><td class="gram-it">scrive</td><td class="gram-it">dorme</td></tr>
+      <tr><td>noi</td><td class="gram-it">parliamo</td><td class="gram-it">scriviamo</td><td class="gram-it">dormiamo</td></tr>
+      <tr><td>voi</td><td class="gram-it">parlate</td><td class="gram-it">scrivete</td><td class="gram-it">dormite</td></tr>
+      <tr><td>loro</td><td class="gram-it">parlano</td><td class="gram-it">scrivono</td><td class="gram-it">dormono</td></tr>
+    </table>
+  </div>
+
+  <div class="gram-section">
+    <h3>Essere &amp; Avere (Irregular)</h3>
+    <table class="gram-table">
+      <tr><th>Pronoun</th><th class="gram-it">essere (to be)</th><th class="gram-it">avere (to have)</th></tr>
+      <tr><td>io</td><td class="gram-it">sono</td><td class="gram-it">ho</td></tr>
+      <tr><td>tu</td><td class="gram-it">sei</td><td class="gram-it">hai</td></tr>
+      <tr><td>lui/lei</td><td class="gram-it">è</td><td class="gram-it">ha</td></tr>
+      <tr><td>noi</td><td class="gram-it">siamo</td><td class="gram-it">abbiamo</td></tr>
+      <tr><td>voi</td><td class="gram-it">siete</td><td class="gram-it">avete</td></tr>
+      <tr><td>loro</td><td class="gram-it">sono</td><td class="gram-it">hanno</td></tr>
+    </table>
+  </div>
+
+  <div class="gram-section">
+    <h3>Passato Prossimo</h3>
+    <table class="gram-table">
+      <tr><th>Auxiliary</th><th>Rule</th><th>Example</th></tr>
+      <tr><td class="gram-it">avere</td><td>Most transitive verbs</td><td class="gram-it">ho mangiato, hai dormito</td></tr>
+      <tr><td class="gram-it">essere</td><td>Motion, state change, reflexives</td><td class="gram-it">sono andato, è arrivata</td></tr>
+    </table>
+    <div class="gram-note">With <strong>essere</strong>, the past participle agrees with the subject: <em>Lei è andata</em> (she went) vs <em>Lui è andato</em> (he went).</div>
+  </div>
+
+  <div class="gram-section">
+    <h3>Articles</h3>
+    <table class="gram-table">
+      <tr><th></th><th>Masc. sg.</th><th>Fem. sg.</th><th>Masc. pl.</th><th>Fem. pl.</th></tr>
+      <tr><td>Definite</td><td class="gram-it">il / lo / l'</td><td class="gram-it">la / l'</td><td class="gram-it">i / gli</td><td class="gram-it">le</td></tr>
+      <tr><td>Indefinite</td><td class="gram-it">un / uno</td><td class="gram-it">una / un'</td><td>—</td><td>—</td></tr>
+    </table>
+    <div class="gram-note"><strong>lo / gli</strong> used before s+consonant, z, ps, gn, x, y: <em>lo studente, gli zaini</em>.</div>
+  </div>
+
+  <div class="gram-section">
+    <h3>Preposition Contractions</h3>
+    <table class="gram-table">
+      <tr><th></th><th>il</th><th>lo</th><th>la</th><th>i</th><th>gli</th><th>le</th></tr>
+      <tr><td class="gram-it">di</td><td class="gram-it">del</td><td class="gram-it">dello</td><td class="gram-it">della</td><td class="gram-it">dei</td><td class="gram-it">degli</td><td class="gram-it">delle</td></tr>
+      <tr><td class="gram-it">a</td><td class="gram-it">al</td><td class="gram-it">allo</td><td class="gram-it">alla</td><td class="gram-it">ai</td><td class="gram-it">agli</td><td class="gram-it">alle</td></tr>
+      <tr><td class="gram-it">da</td><td class="gram-it">dal</td><td class="gram-it">dallo</td><td class="gram-it">dalla</td><td class="gram-it">dai</td><td class="gram-it">dagli</td><td class="gram-it">dalle</td></tr>
+      <tr><td class="gram-it">in</td><td class="gram-it">nel</td><td class="gram-it">nello</td><td class="gram-it">nella</td><td class="gram-it">nei</td><td class="gram-it">negli</td><td class="gram-it">nelle</td></tr>
+      <tr><td class="gram-it">su</td><td class="gram-it">sul</td><td class="gram-it">sullo</td><td class="gram-it">sulla</td><td class="gram-it">sui</td><td class="gram-it">sugli</td><td class="gram-it">sulle</td></tr>
+    </table>
+  </div>
+
+  <div class="gram-section">
+    <h3>Subjunctive — When to Use</h3>
+    <table class="gram-table">
+      <tr><th>Trigger</th><th>Example</th></tr>
+      <tr><td>Desire / wish</td><td class="gram-it">Voglio che tu venga.</td></tr>
+      <tr><td>Doubt / belief</td><td class="gram-it">Penso che sia tardi.</td></tr>
+      <tr><td>Emotion</td><td class="gram-it">Sono felice che tu stia bene.</td></tr>
+      <tr><td>Impersonal</td><td class="gram-it">È necessario che tu studi.</td></tr>
+      <tr><td>Concession</td><td class="gram-it">Benché piova, esco.</td></tr>
+    </table>
+    <div class="gram-note">Subjunctive is required when the <strong>main clause subject ≠ subordinate clause subject</strong> and the main verb expresses will, doubt, or emotion.</div>
+  </div>
+
+  <div class="gram-section">
+    <h3>Modal Verbs</h3>
+    <table class="gram-table">
+      <tr><th>Verb</th><th>Meaning</th><th>io</th><th>tu</th><th>lui/lei</th><th>noi</th><th>voi</th><th>loro</th></tr>
+      <tr><td class="gram-it">volere</td><td>to want</td><td class="gram-it">voglio</td><td class="gram-it">vuoi</td><td class="gram-it">vuole</td><td class="gram-it">vogliamo</td><td class="gram-it">volete</td><td class="gram-it">vogliono</td></tr>
+      <tr><td class="gram-it">potere</td><td>to be able</td><td class="gram-it">posso</td><td class="gram-it">puoi</td><td class="gram-it">può</td><td class="gram-it">possiamo</td><td class="gram-it">potete</td><td class="gram-it">possono</td></tr>
+      <tr><td class="gram-it">dovere</td><td>must/to have to</td><td class="gram-it">devo</td><td class="gram-it">devi</td><td class="gram-it">deve</td><td class="gram-it">dobbiamo</td><td class="gram-it">dovete</td><td class="gram-it">devono</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- COMPLETE -->
+<div id="screen-complete" class="screen">
+  <div class="complete-emoji">🎉</div>
+  <div class="complete-title">Lesson complete!</div>
+  <div class="complete-stats">
+    <div class="stat-chip xp" id="final-xp">0 XP</div>
+    <div class="stat-chip acc" id="final-acc">0% correct</div>
+  </div>
+  <p style="color:var(--text-muted);font-size:14px;">Consistency builds fluency — keep going!</p>
+  <button class="home-btn" onclick="goHome()">Back to lessons</button>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/data.js"></script>
+<script src="js/lesson.js"></script>
+<script src="js/vocab.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>

@@ -11,7 +11,8 @@
       "Bash(curl -s -X POST http://localhost:3000/api/lesson -H \"Content-Type: application/json\" -d '{\"\"\"\"topic\"\"\"\":\"\"\"\"present tense\"\"\"\"}')",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git commit:*)"
     ],
     "additionalDirectories": [
       "/Users/weezy2945/Desktop/parlami/public"

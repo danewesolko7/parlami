@@ -15,7 +15,11 @@
       "Bash(git commit:*)",
       "Bash(find /Users/weezy2945/Desktop/parlami -not -path */node_modules/* -not -path */.git/* -not -path */.claude/* -type f)",
       "Bash(node --check server.js)",
-      "Bash(node --check public/js/speech.js)"
+      "Bash(node --check public/js/speech.js)",
+      "Bash(node -e \"const data = require\\(''''./public/js/data.js''''\\); console.log\\(''''OK''''\\)\")",
+      "Bash(node -c server.js)",
+      "Bash(node -e \":*)",
+      "Bash(timeout 5 node server.js)"
     ],
     "additionalDirectories": [
       "/Users/weezy2945/Desktop/parlami/public"

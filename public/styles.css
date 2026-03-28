@@ -346,9 +346,9 @@
   .badge-earned .badge-name{color:#9a6200;}
 
   /* Achievement toast on complete screen */
-  .achievement-toast{background:var(--amber-light);border:1.5px solid var(--amber);border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;gap:10px;animation:slideUp .25s ease;width:100%;}
+  .achievement-toast{background:var(--amber-light);border:1.5px solid var(--amber);border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;animation:slideUp .25s ease;width:100%;}
   .ach-toast-title{font-size:13px;font-weight:700;color:#9a6200;text-transform:uppercase;letter-spacing:.5px;}
-  .ach-toast-badge{display:flex;align-items:center;gap:12px;}
+  .ach-toast-badge{display:flex;align-items:center;gap:20px;}
   .ach-emoji{font-size:28px;line-height:1;flex-shrink:0;}
-  .ach-name{font-size:15px;font-weight:700;color:var(--text);}
-  .ach-desc{font-size:12px;color:var(--text-muted);margin-top:1px;}
+  .ach-name{font-size:15px;font-weight:700;color:var(--text);text-align:left;}
+  .ach-desc{font-size:12px;color:var(--text-muted);margin-top:1px;text-align:left !important;}

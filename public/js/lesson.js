@@ -40,7 +40,7 @@ async function startGeneratedLesson(lessonId) {
     const r = await fetch(API + '/api/lesson', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic })
+      body: JSON.stringify({ topic, userContext: getUserContext() })
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
@@ -469,16 +469,20 @@ function renderSpeaking(ex) {
         <div class="score-bar-wrap"><div class="score-bar-fill" id="score-bar-fill"></div></div>
         <div class="score-label" id="score-label"></div>
       </div>
-    </div>` : `<div class="speak-unsupported">🎙️ Speech recognition requires Chrome or Edge. <button class="speak-fallback-btn" onclick="showSpeakFallback()">Type instead</button></div>
-    <div id="speak-fallback-area" style="display:none"><input class="blank-input" id="blank-input" placeholder="${esc(isTranslate ? 'Type the Italian...' : 'Type what you hear...')}" oninput="enableIfFilled()" onkeydown="if(event.key==='Enter'&&!document.getElementById('check-btn').disabled)checkSpeakFallback('${esc(ex.answer)}')" /></div>`}
+    </div>` : `<div class="speak-unsupported">🎙️ Speech recognition requires Chrome or Edge. <button class="speak-fallback-btn" onclick="showSpeakFallback()">Type instead</button></div>`}
+    <div id="speak-fallback-area" style="display:none"><input class="blank-input" id="blank-input" placeholder="${esc(isTranslate ? 'Type the Italian...' : 'Type what you hear...')}" oninput="enableIfFilled()" onkeydown="if(event.key==='Enter'&&!document.getElementById('check-btn').disabled)checkSpeakFallback('${esc(ex.answer)}')" /></div>
   </div>
   <button class="check-btn" id="check-btn" disabled onclick="checkSpeaking()">Check</button>`;
 }
 
 function showSpeakFallback() {
-  document.querySelector('.speak-unsupported').style.display = 'none';
+  const unsupported = document.querySelector('.speak-unsupported');
+  if (unsupported) unsupported.style.display = 'none';
+  const speakArea = document.querySelector('.speak-area');
+  if (speakArea) speakArea.style.display = 'none';
   document.getElementById('speak-fallback-area').style.display = 'block';
   const btn = document.getElementById('check-btn');
+  btn.disabled = false;
   btn.onclick = () => checkSpeakFallback(window._speakAnswer);
 }
 function checkSpeakFallback(answer) {
@@ -493,8 +497,11 @@ function checkSpeakFallback(answer) {
 
 function startSpeaking() {
   if (!speechSupported()) return;
+  // Cancel TTS and wait for the audio pipeline to fully release before opening the mic
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+
   document.getElementById('speak-idle').style.display = 'none';
-  document.getElementById('speak-recording').style.display = 'flex';
+  document.getElementById('speak-recording').style.display = 'none'; // shown on onstart
   document.getElementById('speak-result').style.display = 'none';
 
   startListening(
@@ -506,15 +513,30 @@ function startSpeaking() {
     },
     (err) => {
       document.getElementById('speak-recording').style.display = 'none';
-      document.getElementById('speak-idle').style.display = 'flex';
-      if (err !== 'no-speech') {
+      if (err === 'network') {
+        // Chrome routes speech through Google's servers — fall back to typing
+        showSpeakFallback();
         const lbl = document.querySelector('.speak-label');
-        if (lbl) lbl.textContent = 'Could not hear you — try again';
+        if (lbl) lbl.textContent = 'Speech unavailable — type your answer below';
+      } else {
+        document.getElementById('speak-idle').style.display = 'flex';
+        const lbl = document.querySelector('.speak-label');
+        if (lbl) {
+          if (err === 'not-allowed' || err === 'permission-denied') lbl.textContent = 'Microphone blocked — check browser permissions';
+          else if (err === 'audio-capture') lbl.textContent = 'Mic error — check your microphone';
+          else if (err === 'no-speech') lbl.textContent = 'No speech detected — tap to try again';
+          else lbl.textContent = `Error: ${err} — tap to try again`;
+        }
       }
     },
     () => {
-      // onend fires after result or error
       document.getElementById('speak-recording').style.display = 'none';
+      if (window._speakHeard === null) {
+        document.getElementById('speak-idle').style.display = 'flex';
+      }
+    },
+    () => {
+      document.getElementById('speak-recording').style.display = 'flex';
     }
   );
 }

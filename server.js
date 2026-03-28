@@ -217,9 +217,20 @@ app.get('/api/vocab/:topic', async (req, res) => {
   res.json({ topic, words, definitions, source: 'curated+wiktionary' });
 });
 
+// Per-level exercise type sequences and sentence complexity bounds.
+// Types: mc_it_to_en, mc_en_to_it, match_pairs, fill_blank, translate, listening, speaking_repeat, speaking_translate
+const LEVEL_CONFIG = {
+  a1: { minWords: 3, maxWords: 6,  types: ['mc_it_to_en','match_pairs','mc_en_to_it','mc_it_to_en','fill_blank','match_pairs','mc_en_to_it'] },
+  a2: { minWords: 3, maxWords: 8,  types: ['mc_it_to_en','mc_en_to_it','match_pairs','fill_blank','mc_it_to_en','translate','mc_en_to_it','fill_blank'] },
+  b1: { minWords: 4, maxWords: 10, types: ['mc_it_to_en','fill_blank','translate','mc_en_to_it','listening','speaking_repeat','fill_blank','mc_it_to_en'] },
+  b2: { minWords: 5, maxWords: 12, types: ['fill_blank','translate','listening','speaking_repeat','mc_it_to_en','fill_blank','speaking_translate','translate'] },
+  c1: { minWords: 6, maxWords: 15, types: ['fill_blank','translate','listening','speaking_translate','fill_blank','speaking_repeat','translate','listening'] },
+  c2: { minWords: 6, maxWords: 20, types: ['fill_blank','translate','listening','speaking_translate','fill_blank','speaking_translate','translate','listening'] },
+};
+
 // ── Build a full lesson: combines vocab + sentences + translations
 app.post('/api/lesson', async (req, res) => {
-  const { topic } = req.body;
+  const { topic, userContext } = req.body;
   if (!topic) return res.status(400).json({ error: 'topic required' });
 
   try {
@@ -246,134 +257,280 @@ app.post('/api/lesson', async (req, res) => {
       } catch (_) {}
     }));
 
-    // 4. Build exercises from real data
-    const exercises = buildExercises(topic, words, sentences, translationMap, vocabData.definitions || {});
+    // 4. Build exercises from real data, adapted to the user's level
+    const exercises = buildExercises(topic, words, sentences, translationMap, vocabData.definitions || {}, userContext || {});
     res.json({ topic, exercises, wordCount: words.length, sentenceCount: sentences.length });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-function buildExercises(topic, words, sentences, translations, definitions) {
-  const exercises = [];
+function buildExercises(topic, words, sentences, translations, definitions, userContext) {
   const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a; };
-  const pairs = words.filter(w => translations[w]).map(w => [w, translations[w]]);
-  const shuffledWords = shuffle(words);
 
-  // 1. Multiple choice — what does X mean?
-  if (pairs.length >= 4) {
-    const target = pairs[0];
-    const wrong = shuffle(pairs.slice(1)).slice(0, 3).map(p => p[1]);
-    exercises.push({
-      type: 'multiple_choice',
-      prompt: `What does "${target[0]}" mean?`,
-      options: shuffle([target[1], ...wrong]),
-      answer: target[1],
-      hint: definitions[target[0]] ? definitions[target[0]].slice(0, 80) : null
+  const level = (userContext && userContext.cefrLevel) || 'a1';
+  const cfg = LEVEL_CONFIG[level] || LEVEL_CONFIG.a1;
+  const struggling = new Set((userContext && userContext.strugglingWords) || []);
+  const known = new Set((userContext && userContext.knownWords) || []);
+
+  // Prioritise: struggling words first, then unseen words, then already-known
+  const prioritized = [
+    ...words.filter(w => struggling.has(w)),
+    ...words.filter(w => !struggling.has(w) && !known.has(w)),
+    ...words.filter(w => known.has(w) && !struggling.has(w))
+  ];
+  const orderedWords = prioritized.length ? prioritized : words;
+
+  // Build translation pairs in priority order
+  const pairs = orderedWords.filter(w => translations[w]).map(w => [w, translations[w]]);
+  const fallbackWords = shuffle(words);
+
+  // Filter sentences to the level's complexity range; widen if too few
+  const sentPool = (() => {
+    const tight = sentences.filter(s => {
+      const wc = s.italian.split(' ').length;
+      return wc >= cfg.minWords && wc <= cfg.maxWords;
     });
-  }
-
-  // 2. Match pairs
-  if (pairs.length >= 4) {
-    exercises.push({
-      type: 'match_pairs',
-      prompt: `Match the Italian ${topic} words to their meanings`,
-      pairs: shuffle(pairs).slice(0, 4)
+    if (tight.length >= 3) return tight;
+    return sentences.filter(s => {
+      const wc = s.italian.split(' ').length;
+      return wc >= Math.max(3, cfg.minWords - 1) && wc <= cfg.maxWords + 3;
     });
-  }
+  })();
 
-  // 3. Fill in the blank from a real Tatoeba sentence
-  const goodSents = sentences.filter(s => {
-    const wds = s.italian.split(' ');
-    return wds.length >= 4 && wds.length <= 12;
-  });
-  if (goodSents.length > 0) {
-    const sent = goodSents[0];
-    const wds = sent.italian.split(' ');
-    // blank out a content word (not first/last, skip short words)
-    const blankIdx = wds.findIndex((w, i) => i > 0 && i < wds.length - 1 && w.replace(/[^a-zàèéìòù]/gi,'').length > 3);
-    if (blankIdx > -1) {
-      const blank = wds[blankIdx].replace(/[.,!?;:]/g, '');
-      const display = [...wds];
-      display[blankIdx] = '___';
-      exercises.push({
-        type: 'fill_blank',
-        prompt: display.join(' '),
-        hint: `English: "${sent.english}"`,
-        answer: blank.toLowerCase(),
-        placeholder: 'Type the missing word...'
-      });
+  // Sentence iterator — each call returns the next unused sentence
+  const usedSentIdx = new Set();
+  function nextSent() {
+    for (let i = 0; i < sentPool.length; i++) {
+      if (!usedSentIdx.has(i)) { usedSentIdx.add(i); return sentPool[i]; }
     }
+    return null;
   }
 
-  // 4. Translate sentence (word bank)
-  if (goodSents.length > 1) {
-    const sent = goodSents[1];
-    const answerWords = sent.italian.toLowerCase().replace(/[.,!?;:]/g, '').split(' ').filter(Boolean);
-    const distractors = shuffle(shuffledWords.filter(w => !answerWords.includes(w))).slice(0, 3);
-    exercises.push({
-      type: 'translate',
-      prompt: 'Translate to Italian:',
-      english: sent.english,
-      answer: sent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
-      words: shuffle([...answerWords, ...distractors])
-    });
+  const exercises = [];
+  let pairCursor = 0;
+
+  function nextPair() {
+    if (!pairs.length) return null;
+    const p = pairs[pairCursor % pairs.length];
+    pairCursor++;
+    return p;
   }
 
-  // 5. Listening — use a Tatoeba sentence
-  if (goodSents.length > 2) {
-    const sent = goodSents[2];
-    exercises.push({
-      type: 'listening',
-      prompt: 'Listen and type what you hear:',
-      audio: sent.italian,
-      answer: sent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
-      hint: `Meaning: "${sent.english}"`
-    });
+  // When translations are sparse, pad with word-list distractors for MC exercises
+  function mcDistractorsIT(exclude) {
+    return shuffle(fallbackWords.filter(w => w !== exclude)).slice(0, 3);
   }
 
-  // 6. Multiple choice — how do you say X in Italian?
-  if (pairs.length >= 4) {
-    const target = pairs[Math.min(1, pairs.length - 1)];
-    const wrong = shuffle(pairs.filter((_, i) => i !== 1)).slice(0, 3).map(p => p[0]);
-    exercises.push({
-      type: 'multiple_choice',
-      prompt: `How do you say "${target[1]}" in Italian?`,
-      options: shuffle([target[0], ...wrong]),
-      answer: target[0],
-      hint: null
-    });
-  }
+  for (const type of cfg.types) {
+    if (exercises.length >= 10) break;
 
-  // 7. Speaking — repeat a short Tatoeba sentence
-  const shortSents = sentences.filter(s => {
-    const wds = s.italian.split(' ');
-    return wds.length >= 3 && wds.length <= 7;
-  });
-  if (shortSents.length > 0) {
-    const sent = shortSents[0];
-    exercises.push({
-      type: 'speaking',
-      subtype: 'repeat',
-      prompt: 'Say this phrase out loud:',
-      audio: sent.italian,
-      answer: sent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
-      hint: `Meaning: "${sent.english}"`
-    });
-  }
+    if (type === 'mc_it_to_en') {
+      if (pairs.length >= 2) {
+        const target = nextPair();
+        const wrongFromPairs = pairs.filter(p => p[0] !== target[0]).map(p => p[1]);
+        // Pad with generic distractors if needed
+        const padded = [...wrongFromPairs, 'a word', 'an object', 'an action', 'a place'].filter((v,i,a)=>a.indexOf(v)===i);
+        const wrong = shuffle(padded).slice(0, 3);
+        if (wrong.length === 3) {
+          exercises.push({
+            type: 'multiple_choice',
+            prompt: `What does "${target[0]}" mean?`,
+            options: shuffle([target[1], ...wrong]),
+            answer: target[1],
+            hint: definitions[target[0]] ? definitions[target[0]].slice(0, 80) : null
+          });
+        }
+      } else if (words.length >= 4) {
+        // No translations — make a listening/recognition exercise instead
+        const word = orderedWords[exercises.length % orderedWords.length];
+        const def = definitions[word];
+        exercises.push({
+          type: 'listening',
+          prompt: 'Listen and type what you hear:',
+          audio: word,
+          answer: word.toLowerCase().replace(/[.,!?;:]/g, ''),
+          hint: def ? `Meaning: "${def.slice(0, 60)}"` : `A ${topic}-related word`
+        });
+      }
 
-  // 8. Speaking — translate to Italian and say it
-  if (pairs.length >= 2) {
-    const target = pairs[Math.min(2, pairs.length - 1)];
-    exercises.push({
-      type: 'speaking',
-      subtype: 'translate',
-      prompt: 'Say this in Italian:',
-      english: target[1],
-      audio: target[0],
-      answer: target[0].toLowerCase().replace(/[.,!?;:]/g, ''),
-      hint: `Say: "${target[0]}"`
-    });
+    } else if (type === 'mc_en_to_it') {
+      if (pairs.length >= 2) {
+        const target = nextPair();
+        const wrongIT = shuffle(pairs.filter(p => p[0] !== target[0]).map(p => p[0]));
+        // Pad with word-list distractors if needed
+        const extra = mcDistractorsIT(target[0]).filter(w => !wrongIT.includes(w));
+        const wrong = [...wrongIT, ...extra].slice(0, 3);
+        if (wrong.length === 3) {
+          exercises.push({
+            type: 'multiple_choice',
+            prompt: `How do you say "${target[1]}" in Italian?`,
+            options: shuffle([target[0], ...wrong]),
+            answer: target[0],
+            hint: definitions[target[0]] ? definitions[target[0]].slice(0, 80) : null
+          });
+        }
+      } else if (words.length >= 4) {
+        const word = orderedWords[exercises.length % orderedWords.length];
+        const wrong3 = mcDistractorsIT(word);
+        exercises.push({
+          type: 'multiple_choice',
+          prompt: `Which word belongs to the topic "${topic}"?`,
+          options: shuffle([word, ...wrong3]),
+          answer: word,
+          hint: definitions[word] ? definitions[word].slice(0, 80) : null
+        });
+      }
+
+    } else if (type === 'match_pairs') {
+      if (pairs.length >= 4) {
+        exercises.push({
+          type: 'match_pairs',
+          prompt: `Match the Italian ${topic} words to their meanings`,
+          pairs: shuffle(pairs).slice(0, 4)
+        });
+      } else if (pairs.length >= 3) {
+        exercises.push({
+          type: 'match_pairs',
+          prompt: `Match the Italian ${topic} words to their meanings`,
+          pairs: pairs.slice(0, 3)
+        });
+      }
+
+    } else if (type === 'fill_blank') {
+      const sent = nextSent();
+      if (sent) {
+        const wds = sent.italian.split(' ');
+        const blankIdx = wds.findIndex((w, i) =>
+          i > 0 && i < wds.length - 1 && w.replace(/[^a-zàèéìòù]/gi, '').length > 3
+        );
+        if (blankIdx > -1) {
+          const blank = wds[blankIdx].replace(/[.,!?;:]/g, '');
+          const display = [...wds];
+          display[blankIdx] = '___';
+          exercises.push({
+            type: 'fill_blank',
+            prompt: display.join(' '),
+            hint: `English: "${sent.english}"`,
+            answer: blank.toLowerCase(),
+            placeholder: 'Type the missing word...'
+          });
+        } else {
+          // Sentence found but no good blank word — use it as listening instead
+          exercises.push({
+            type: 'listening',
+            prompt: 'Listen and type what you hear:',
+            audio: sent.italian,
+            answer: sent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
+            hint: `Meaning: "${sent.english}"`
+          });
+        }
+      } else if (orderedWords.length > 0) {
+        // No sentences — blank a word from vocabulary
+        const word = orderedWords[exercises.length % orderedWords.length];
+        const def = definitions[word] || `a ${topic} word`;
+        exercises.push({
+          type: 'fill_blank',
+          prompt: `___ (${topic})`,
+          hint: `Meaning: "${def.slice(0, 60)}"`,
+          answer: word.toLowerCase(),
+          placeholder: 'Type the Italian word...'
+        });
+      }
+
+    } else if (type === 'translate') {
+      const sent = nextSent();
+      if (sent) {
+        const answerWords = sent.italian.toLowerCase().replace(/[.,!?;:]/g, '').split(' ').filter(Boolean);
+        const distractors = shuffle(fallbackWords.filter(w => !answerWords.includes(w))).slice(0, 3);
+        exercises.push({
+          type: 'translate',
+          prompt: 'Translate to Italian:',
+          english: sent.english,
+          answer: sent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
+          words: shuffle([...answerWords, ...distractors])
+        });
+      } else if (pairs.length >= 1) {
+        // No sentences — use a vocab pair as a word-bank translate
+        const target = nextPair();
+        exercises.push({
+          type: 'fill_blank',
+          prompt: `How do you write "${target[1]}" in Italian?`,
+          hint: definitions[target[0]] ? definitions[target[0]].slice(0, 80) : null,
+          answer: target[0].toLowerCase(),
+          placeholder: 'Type the Italian word...'
+        });
+      }
+
+    } else if (type === 'listening') {
+      const sent = nextSent();
+      if (sent) {
+        exercises.push({
+          type: 'listening',
+          prompt: 'Listen and type what you hear:',
+          audio: sent.italian,
+          answer: sent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
+          hint: `Meaning: "${sent.english}"`
+        });
+      } else if (orderedWords.length > 0) {
+        // No sentences — listen to individual vocabulary word
+        const word = orderedWords[exercises.length % orderedWords.length];
+        exercises.push({
+          type: 'listening',
+          prompt: 'Listen and type what you hear:',
+          audio: word,
+          answer: word.toLowerCase().replace(/[.,!?;:]/g, ''),
+          hint: definitions[word] ? `Meaning: "${definitions[word].slice(0, 60)}"` : null
+        });
+      }
+
+    } else if (type === 'speaking_repeat') {
+      // Find a short unused sentence
+      let speakSent = null;
+      for (let i = 0; i < sentPool.length; i++) {
+        if (!usedSentIdx.has(i) && sentPool[i].italian.split(' ').length <= Math.min(cfg.maxWords, 7)) {
+          usedSentIdx.add(i);
+          speakSent = sentPool[i];
+          break;
+        }
+      }
+      if (!speakSent && sentPool.length > 0) speakSent = sentPool[0];
+      if (speakSent) {
+        exercises.push({
+          type: 'speaking',
+          subtype: 'repeat',
+          prompt: 'Say this phrase out loud:',
+          audio: speakSent.italian,
+          answer: speakSent.italian.toLowerCase().replace(/[.,!?;:]/g, ''),
+          hint: `Meaning: "${speakSent.english}"`
+        });
+      } else if (orderedWords.length > 0) {
+        // No sentences — speak a vocabulary word
+        const word = orderedWords[exercises.length % orderedWords.length];
+        exercises.push({
+          type: 'speaking',
+          subtype: 'repeat',
+          prompt: 'Say this word out loud:',
+          audio: word,
+          answer: word.toLowerCase().replace(/[.,!?;:]/g, ''),
+          hint: definitions[word] ? `Meaning: "${definitions[word].slice(0, 60)}"` : null
+        });
+      }
+
+    } else if (type === 'speaking_translate') {
+      const target = nextPair();
+      if (target) {
+        exercises.push({
+          type: 'speaking',
+          subtype: 'translate',
+          prompt: 'Say this in Italian:',
+          english: target[1],
+          audio: target[0],
+          answer: target[0].toLowerCase().replace(/[.,!?;:]/g, ''),
+          hint: `Say: "${target[0]}"`
+        });
+      }
+    }
   }
 
   return exercises.slice(0, 10);

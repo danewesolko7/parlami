@@ -6,18 +6,28 @@ function speechSupported() {
   return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 
-function startListening(onResult, onError, onEnd) {
+function startListening(onResult, onError, onEnd, onStart) {
   if (_listening) stopListening();
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   _recog = new SR();
   _recog.lang = 'it-IT';
-  _recog.continuous = false;
-  _recog.interimResults = false;
+  _recog.continuous = true;
+  _recog.interimResults = true;
   _recog.maxAlternatives = 5;
 
+  let _finalTranscript = '';
+
+  _recog.onstart = () => {
+    if (onStart) onStart();
+  };
   _recog.onresult = (e) => {
-    const alts = Array.from(e.results[0]).map(r => r.transcript.trim());
-    onResult(alts);
+    // Accumulate all final segments; ignore interim results
+    _finalTranscript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        _finalTranscript += e.results[i][0].transcript;
+      }
+    }
   };
   _recog.onerror = (e) => {
     _listening = false;
@@ -25,6 +35,7 @@ function startListening(onResult, onError, onEnd) {
   };
   _recog.onend = () => {
     _listening = false;
+    if (_finalTranscript.trim()) onResult([_finalTranscript.trim()]);
     onEnd();
   };
 

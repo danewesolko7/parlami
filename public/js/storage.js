@@ -43,6 +43,50 @@ function getExerciseWords(ex) {
     default: return [];
   }
 }
+// Returns a snapshot of the user's learning state to send with lesson requests
+function getUserContext() {
+  const stats = loadStats();
+  const vocab = loadVocab();
+
+  // Count unique lessons completed per CEFR tier
+  const done = { a1:0, a2:0, b1:0, b2:0, c1:0, c2:0 };
+  Object.entries(stats.lessons || {}).forEach(([id, s]) => {
+    const diff = (typeof LESSON_DIFF !== 'undefined') ? LESSON_DIFF[id] : null;
+    if (s.completions > 0 && diff && done[diff] !== undefined) done[diff]++;
+  });
+
+  // Walk tiers to determine current CEFR level (mirrors JM_LEVELS in home.js)
+  const tiers = [
+    { id:'a1', need:4 }, { id:'a2', need:6 }, { id:'b1', need:6 },
+    { id:'b2', need:8 }, { id:'c1', need:8 }, { id:'c2', need:null }
+  ];
+  let cefrLevel = 'a1';
+  for (const tier of tiers) {
+    const tierDone = done[tier.id] || 0;
+    cefrLevel = tier.id;
+    if (!tier.need || tierDone < tier.need) break;
+  }
+
+  const knownWords = [];
+  const strugglingWords = [];
+  Object.entries(vocab).forEach(([w, v]) => {
+    const lv = vocabLevel(v);
+    if (lv >= 3) knownWords.push(w);
+    else if (lv > 0) strugglingWords.push(w);
+  });
+
+  const totalLessons = Object.values(stats.lessons || {})
+    .reduce((sum, l) => sum + (l.completions || 0), 0);
+
+  return {
+    cefrLevel,
+    totalLessons,
+    totalXP: stats.totalXP || 0,
+    knownWords: knownWords.slice(0, 50),
+    strugglingWords: strugglingWords.slice(0, 30)
+  };
+}
+
 function saveCompletion(topic, earnedXP, accuracy) {
   const stats = loadStats();
   stats.totalXP = (stats.totalXP || 0) + earnedXP;

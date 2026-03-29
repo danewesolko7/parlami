@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2d9b6f">
+<link rel="manifest" href="/manifest.json">
 <title>Parlami — Learn Italian</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -25,22 +27,13 @@
     <button class="action-btn grammar" onclick="showGrammarRef()">📐 Grammar Ref</button>
   </div>
 
-  <div id="journey-card" class="journey-card"></div>
-
-  <div id="achievements-section" style="width:100%;margin-bottom:24px;"></div>
-
-  <div class="section-label">Your course</div>
-  <div id="course-map" style="width:100%;"></div>
-
-  <div class="section-label">Generate a lesson on any topic</div>
-  <div class="ai-panel">
-    <div class="custom-row">
-      <input class="custom-input" id="custom-topic" placeholder="e.g. sports, music, politics..." />
-      <button class="gen-btn" onclick="startGeneratedLesson()">Generate →</button>
-    </div>
-    <div class="source-tag">📡 Generated from Wiktionary + Tatoeba</div>
+  <!-- L5: Streak grace-period restore bar -->
+  <div id="streak-restore-bar" style="display:none;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 16px;background:var(--amber-light);border:1.5px solid var(--amber);border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:#6b4a00;">
+    <span style="flex:1;">You missed yesterday — restore your streak for 50 XP?</span>
+    <button onclick="restoreStreak()" style="padding:6px 14px;border:1.5px solid var(--amber);border-radius:99px;background:white;color:#6b4a00;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Restore 🔥 (−50 XP)</button>
   </div>
 
+  <!-- L2: Search tools moved above the fold -->
   <div class="section-label">Look up any Italian word</div>
   <div class="dict-panel">
     <div class="dict-row">
@@ -59,6 +52,34 @@
     </div>
     <div id="sentences-result"></div>
     <div class="source-tag">💬 Tatoeba — human-written sentences</div>
+  </div>
+
+  <div id="journey-card" class="journey-card"></div>
+
+  <div id="achievements-section" style="width:100%;margin-bottom:24px;"></div>
+
+  <div class="section-label">Your course</div>
+  <div id="course-map" style="width:100%;"></div>
+
+  <div class="section-label">Generate a lesson on any topic</div>
+  <div class="ai-panel">
+    <div class="custom-row">
+      <input class="custom-input" id="custom-topic" placeholder="e.g. sports, music, politics..." />
+      <button class="gen-btn" onclick="startGeneratedLesson()">Generate →</button>
+    </div>
+    <div class="source-tag">📡 Generated from Wiktionary + Tatoeba</div>
+  </div>
+
+</div>
+
+<!-- NO-HEARTS OVERLAY (H1) -->
+<div id="no-hearts-overlay" class="no-hearts-overlay">
+  <div class="no-hearts-card">
+    <div style="font-size:52px">💔</div>
+    <div class="no-hearts-title">Out of hearts!</div>
+    <div class="no-hearts-msg">Take a breath — you can continue with a fresh set.</div>
+    <button class="check-btn" onclick="refillHearts()">Continue →</button>
+    <button class="home-btn" style="margin-top:8px;font-size:14px;padding:10px 20px" onclick="speechSynthesis.cancel();showScreen('home');updateHomeProgress()">End lesson</button>
   </div>
 </div>
 
@@ -103,8 +124,12 @@
     </button>
     <div class="grammar-title">Grammar Reference</div>
   </div>
+  <!-- L9: grammar search -->
+  <div style="width:100%;margin-bottom:14px;">
+    <input class="custom-input gram-search-input" id="gram-search" placeholder="Search grammar sections..." oninput="filterGrammar(this.value)" style="width:100%;" />
+  </div>
 
-  <div class="gram-section">
+  <div class="gram-section" id="grammar-presente">
     <h3>Present Tense — Regular Verbs</h3>
     <table class="gram-table">
       <tr><th>Pronoun</th><th class="gram-it">-ARE (parlare)</th><th class="gram-it">-ERE (scrivere)</th><th class="gram-it">-IRE (dormire)</th></tr>
@@ -117,7 +142,7 @@
     </table>
   </div>
 
-  <div class="gram-section">
+  <div class="gram-section" id="grammar-essere-avere">
     <h3>Essere &amp; Avere (Irregular)</h3>
     <table class="gram-table">
       <tr><th>Pronoun</th><th class="gram-it">essere (to be)</th><th class="gram-it">avere (to have)</th></tr>
@@ -130,7 +155,7 @@
     </table>
   </div>
 
-  <div class="gram-section">
+  <div class="gram-section" id="grammar-passato-prossimo">
     <h3>Passato Prossimo</h3>
     <table class="gram-table">
       <tr><th>Auxiliary</th><th>Rule</th><th>Example</th></tr>
@@ -140,7 +165,7 @@
     <div class="gram-note">With <strong>essere</strong>, the past participle agrees with the subject: <em>Lei è andata</em> (she went) vs <em>Lui è andato</em> (he went).</div>
   </div>
 
-  <div class="gram-section">
+  <div class="gram-section" id="grammar-articles">
     <h3>Articles</h3>
     <table class="gram-table">
       <tr><th></th><th>Masc. sg.</th><th>Fem. sg.</th><th>Masc. pl.</th><th>Fem. pl.</th></tr>
@@ -150,7 +175,7 @@
     <div class="gram-note"><strong>lo / gli</strong> used before s+consonant, z, ps, gn, x, y: <em>lo studente, gli zaini</em>.</div>
   </div>
 
-  <div class="gram-section">
+  <div class="gram-section" id="grammar-prepositions">
     <h3>Preposition Contractions</h3>
     <table class="gram-table">
       <tr><th></th><th>il</th><th>lo</th><th>la</th><th>i</th><th>gli</th><th>le</th></tr>
@@ -162,7 +187,7 @@
     </table>
   </div>
 
-  <div class="gram-section">
+  <div class="gram-section" id="grammar-subjunctive">
     <h3>Subjunctive — When to Use</h3>
     <table class="gram-table">
       <tr><th>Trigger</th><th>Example</th></tr>
@@ -175,7 +200,21 @@
     <div class="gram-note">Subjunctive is required when the <strong>main clause subject ≠ subordinate clause subject</strong> and the main verb expresses will, doubt, or emotion.</div>
   </div>
 
-  <div class="gram-section">
+  <div class="gram-section" id="grammar-futuro">
+    <h3>Futuro Semplice — Regular Verbs</h3>
+    <table class="gram-table">
+      <tr><th>Pronoun</th><th class="gram-it">-ARE → -ERE stem (parlare)</th><th class="gram-it">-ERE (scrivere)</th><th class="gram-it">-IRE (dormire)</th></tr>
+      <tr><td>io</td><td class="gram-it">parlerò</td><td class="gram-it">scriverò</td><td class="gram-it">dormirò</td></tr>
+      <tr><td>tu</td><td class="gram-it">parlerai</td><td class="gram-it">scriverai</td><td class="gram-it">dormirai</td></tr>
+      <tr><td>lui/lei</td><td class="gram-it">parlerà</td><td class="gram-it">scriverà</td><td class="gram-it">dormirà</td></tr>
+      <tr><td>noi</td><td class="gram-it">parleremo</td><td class="gram-it">scriveremo</td><td class="gram-it">dormiremo</td></tr>
+      <tr><td>voi</td><td class="gram-it">parlerete</td><td class="gram-it">scriverete</td><td class="gram-it">dormirete</td></tr>
+      <tr><td>loro</td><td class="gram-it">parleranno</td><td class="gram-it">scriveranno</td><td class="gram-it">dormiranno</td></tr>
+    </table>
+    <div class="gram-note">Key irregulars: <em>essere → sarò, avere → avrò, fare → farò, andare → andrò, venire → verrò, dovere → dovrò, potere → potrò, volere → vorrò</em>. The future is also used for conjecture: <em>Avrà trent'anni</em> = "He must be about thirty."</div>
+  </div>
+
+  <div class="gram-section" id="grammar-modals">
     <h3>Modal Verbs</h3>
     <table class="gram-table">
       <tr><th>Verb</th><th>Meaning</th><th>io</th><th>tu</th><th>lui/lei</th><th>noi</th><th>voi</th><th>loro</th></tr>
@@ -183,6 +222,23 @@
       <tr><td class="gram-it">potere</td><td>to be able</td><td class="gram-it">posso</td><td class="gram-it">puoi</td><td class="gram-it">può</td><td class="gram-it">possiamo</td><td class="gram-it">potete</td><td class="gram-it">possono</td></tr>
       <tr><td class="gram-it">dovere</td><td>must/to have to</td><td class="gram-it">devo</td><td class="gram-it">devi</td><td class="gram-it">deve</td><td class="gram-it">dobbiamo</td><td class="gram-it">dovete</td><td class="gram-it">devono</td></tr>
     </table>
+  </div>
+  <div class="gram-section" id="gram-questions">
+    <h3>Asking Questions</h3>
+    <p>Italian forms yes/no questions with <strong>rising intonation only</strong> — no verb inversion needed.</p>
+    <p><em>Parli italiano?</em> (Do you speak Italian?) — same word order as a statement</p>
+    <table class="gram-table">
+      <tr><th>Question word</th><th>Meaning</th><th>Example</th></tr>
+      <tr><td class="gram-it">chi</td><td>who</td><td class="gram-it">Chi viene stasera?</td></tr>
+      <tr><td class="gram-it">cosa / che</td><td>what</td><td class="gram-it">Cosa fai? / Che fai?</td></tr>
+      <tr><td class="gram-it">dove</td><td>where</td><td class="gram-it">Dove abiti?</td></tr>
+      <tr><td class="gram-it">quando</td><td>when</td><td class="gram-it">Quando parti?</td></tr>
+      <tr><td class="gram-it">come</td><td>how</td><td class="gram-it">Come stai?</td></tr>
+      <tr><td class="gram-it">perché</td><td>why / because</td><td class="gram-it">Perché studi italiano?</td></tr>
+      <tr><td class="gram-it">quale / quali</td><td>which</td><td class="gram-it">Quale preferisci?</td></tr>
+      <tr><td class="gram-it">quanto / quanta</td><td>how much/many</td><td class="gram-it">Quanto costa?</td></tr>
+    </table>
+    <p><strong>Tag questions:</strong> use <em>vero?</em> or <em>no?</em> at the end: <em>Sei italiano, vero?</em></p>
   </div>
 </div>
 
@@ -208,6 +264,16 @@
   <button class="home-btn" onclick="goHome()">Back to lessons</button>
 </div>
 
+<script>
+function filterGrammar(q) {
+  const term = q.trim().toLowerCase();
+  document.querySelectorAll('#screen-grammar .gram-section').forEach(sec => {
+    const heading = sec.querySelector('h3');
+    const match = !term || (heading && heading.textContent.toLowerCase().includes(term));
+    sec.style.display = match ? '' : 'none';
+  });
+}
+</script>
 <script src="js/utils.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/api.js"></script>

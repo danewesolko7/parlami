@@ -147,6 +147,67 @@ function renderJourneyCard() {
     ${cur.need ? `<div class="jm-bar-track"><div class="jm-bar-fill" style="width:${pct}%;background:${cur.color};"></div></div><div class="jm-bar-label">${doneCount} / ${cur.need} ${cur.label} lessons</div>` : ''}`;
 }
 
+// ── Go to current unit in lessons tab ────────────────────────
+function goToCurrentUnit(unitId) {
+  showTab('lessons');
+  requestAnimationFrame(() => {
+    const unitBlocks = document.querySelectorAll('#course-map .unit-block');
+    const unitIndex = COURSE.findIndex(u => u.id === unitId);
+    if (unitIndex >= 0 && unitBlocks[unitIndex]) {
+      unitBlocks[unitIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+}
+
+// ── Home current unit card ────────────────────────────────────
+function renderHomeCurrentUnit() {
+  const el = document.getElementById('home-current-unit');
+  if (!el) return;
+  const stats = loadStats();
+
+  // Find the first unit that isn't fully completed
+  let activeUnit = null;
+  let activeUnitIdx = -1;
+  for (let i = 0; i < COURSE.length; i++) {
+    const unit = COURSE[i];
+    const doneCount = unit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length;
+    if (doneCount < unit.lessons.length) {
+      activeUnit = unit;
+      activeUnitIdx = i;
+      break;
+    }
+  }
+  // All units complete — show last
+  if (!activeUnit) {
+    activeUnit = COURSE[COURSE.length - 1];
+    activeUnitIdx = COURSE.length - 1;
+  }
+
+  const doneCount = activeUnit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length;
+  const total = activeUnit.lessons.length;
+  const pct = Math.round((doneCount / total) * 100);
+
+  // Find next lesson emoji
+  const nextLesson = activeUnit.lessons.find(l => !(stats.lessons[l.id]?.completions > 0));
+  const icon = nextLesson ? nextLesson.emoji : '✓';
+
+  // Resolve CSS variable color to a raw value for inline style
+  const colorMap = { 'var(--green)':'#2d9b6f','var(--blue)':'#378add','var(--purple)':'#7f77dd','var(--amber)':'#ef9f27','var(--red)':'#e24b4a' };
+  const barColor = colorMap[activeUnit.color] || '#2d9b6f';
+
+  el.innerHTML = `<div class="section-header" style="margin-top:8px;">Continue Learning</div><div class="home-unit-card" onclick="goToCurrentUnit('${activeUnit.id}')">
+    <div class="huc-icon">${icon}</div>
+    <div class="huc-body">
+      <div class="huc-label">Current Unit</div>
+      <div class="huc-title">${activeUnit.title}</div>
+      <div class="huc-bar-track"><div class="huc-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+      <div class="huc-progress">${doneCount} of ${total} lessons complete</div>
+    </div>
+    <div class="huc-arrow">›</div>
+  </div>`;
+  el.style.display = 'block';
+}
+
 // ── updateHomeProgress ────────────────────────────────────────
 function updateHomeProgress() {
   const stats = loadStats();
@@ -198,6 +259,7 @@ function updateHomeProgress() {
   }
   renderCourseMap();
   renderJourneyCard();
+  renderHomeCurrentUnit();
 }
 
 // ── Skill-tree unlock logic ────────────────────────────────────
@@ -307,4 +369,5 @@ function renderCourseMap() {
 // Init
 renderCourseMap();
 renderJourneyCard();
+renderHomeCurrentUnit();
 updateHomeProgress();

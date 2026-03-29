@@ -1,6 +1,7 @@
 // ── Hardcoded fallback lessons ───────────────────────────────
 const HARDCODED = {
   greetings:[
+    {type:'info_card',title:'Italian & English share thousands of words!',content:'Many Italian words are cognates — they look similar to English because both languages share Latin roots.<br><br><strong>Examples:</strong> università → university · comunicare → communicate · possibile → possible · interessante → interesting · nazione → nation<br><br>When you see an Italian word you don\'t know, try guessing from the English root first!'},
     {type:'multiple_choice',prompt:'How do you say "Hello" in Italian?',options:['Ciao','Arrivederci','Grazie','Prego'],answer:'Ciao',hint:'A casual, friendly greeting'},
     {type:'translate',prompt:'Translate to Italian:',english:'Good morning',answer:'buongiorno',words:['buongiorno','buonasera','buonanotte','ciao','arrivederci','bella','prego']},
     {type:'fill_blank',prompt:'___ , come stai?',hint:'Complete with "hello"',answer:'ciao',placeholder:'Type the missing word...'},
@@ -23,6 +24,12 @@ const HARDCODED = {
     {type:'fill_blank',prompt:'Ho ___ anni. (I am 25 years old.)',hint:'The Italian for twenty-five',answer:'venticinque',placeholder:'Type the number...'},
     {type:'translate',prompt:'Translate to Italian:',english:'I am thirty years old',answer:"ho trent'anni",words:["ho","trent'anni","venti","trenta","quaranta","anni","cinque","dieci"]},
     {type:'listening',prompt:'Listen and type what you hear:',audio:'Il mio numero di telefono è tre, tre, sette.',answer:'il mio numero di telefono è tre tre sette',hint:'Giving a phone number'},
+    {type:'multiple_choice',prompt:'How do you say "two hundred" in Italian?',options:['duecento','duemila','duecentouno','ducento'],answer:'duecento',hint:'"Cento" = 100; just prefix the digit: duecento, trecento, quattrocento...'},
+    {type:'multiple_choice',prompt:'How do you say the year 1985 in Italian?',options:['uno nove otto cinque','mille novecento ottantacinque','mille e novecento e ottanta','diciannove ottantacinque'],answer:'mille novecento ottantacinque',hint:'Years: mille (1000) + novecento (900) + ottantacinque (85)'},
+    {type:'match_pairs',prompt:'Match ordinal numbers to Italian',pairs:[['primo','1st'],['secondo','2nd'],['terzo','3rd'],['decimo','10th']]},
+    {type:'fill_blank',prompt:'È arrivato al ___ posto nella gara. (He finished in tenth place.)',hint:'The ordinal for ten',answer:'decimo',placeholder:'Type the ordinal...'},
+    {type:'multiple_choice',prompt:'How do you say "one million" in Italian?',options:['mille','duemila','un milione','un millione'],answer:'un milione',hint:'"Milione" — note: un milione (singular), due milioni (plural)'},
+    {type:'translate',prompt:'Translate to Italian:',english:'There are two thousand students in this university',answer:'ci sono duemila studenti in questa università',words:['ci','sono','duemila','studenti','in','questa','università','mille','tremila']},
   ],
   alphabet:[
     {type:'multiple_choice',prompt:'How is "C" pronounced before "i" or "e" in Italian?',options:['Like "k"','Like "ch" in cheese','Like "s"','Like "sh"'],answer:'Like "ch" in cheese',hint:'Ciao, città, cinema — all use this sound'},
@@ -53,6 +60,7 @@ const HARDCODED = {
     {type:'match_pairs',prompt:'Match foods to Italian',pairs:[['Pane','Bread'],['Formaggio','Cheese'],['Vino','Wine'],['Caffè','Coffee']]},
     {type:'fill_blank',prompt:'Un ___ per favore.',hint:'The Italian word for coffee',answer:'caffè',placeholder:'Type the missing word...'},
     {type:'multiple_choice',prompt:'What is "il conto"?',options:['The menu','The waiter','The bill','The table'],answer:'The bill',hint:'You ask for this at the end of a meal'},
+    {type:'info_card',title:'"Vorrei" — a taste of the conditional',content:'<strong>Vorrei</strong> = "I would like" — used to order food and make polite requests.<br><br>Grammatically, it\'s the <em>conditional</em> form of <strong>volere</strong> (to want). You\'ll learn the full conditional tense later, but for now:<br><br>• <strong>Vorrei un caffè</strong> — I\'d like a coffee<br>• <strong>Vorrei prenotare un tavolo</strong> — I\'d like to book a table<br><br>The <em>-ei</em> ending signals conditional: vorrei, sarei, potrei, farei...'},
     {type:'translate',prompt:'Translate to Italian:',english:'I would like a coffee',answer:'vorrei un caffè',words:['vorrei','un','caffè','acqua','pane','per','favore','grazie','pizza']},
     {type:'listening',prompt:'Listen and type what you hear:',audio:'Vorrei una pizza, per favore.',answer:'vorrei una pizza per favore',hint:'Ordering food politely'},
     {type:'multiple_choice',prompt:'What does "al dente" literally mean?',options:['Well cooked','To the tooth','With sauce','Without salt'],answer:'To the tooth',hint:'Pasta cooked just firm enough to give a little resistance'},
@@ -412,6 +420,7 @@ const HARDCODED = {
     {type:'listening',prompt:'Listen and type what you hear:',audio:'Tifo per la Juventus da quando ero bambino.',answer:'tifo per la juventus da quando ero bambino',hint:'Supporting a football team since childhood'},
   ],
   hobbies:[
+    {type:'info_card',title:'"Mi piace" — the inverted structure',content:'Unlike English "I like pizza," Italian uses an inverted structure:<br><br><strong>A me piace la pizza</strong> = "To me is pleasing the pizza"<br><br>• <strong>mi piace</strong> + singular noun (one thing)<br>• <strong>mi piacciono</strong> + plural noun (multiple things)<br>• <strong>a te piace / ti piace</strong> — you like<br>• <strong>a lui/lei piace / gli/le piace</strong> — he/she likes<br><br>Common mistake: ❌ "Io piaccio la pizza" → ✅ "Mi piace la pizza"'},
     {type:'multiple_choice',prompt:'What is "la lettura"?',options:['Writing','Reading','Drawing','Singing'],answer:'Reading',hint:'From "leggere" = to read'},
     {type:'match_pairs',prompt:'Match hobbies to Italian',pairs:[['Musica','Music'],['Fotografia','Photography'],['Giardinaggio','Gardening'],['Pittura','Painting']]},
     {type:'fill_blank',prompt:'Mi piace molto la ___. (I really like photography.)',hint:'Taking photos as a hobby',answer:'fotografia',placeholder:'Type the hobby...'},
@@ -605,6 +614,49 @@ const HARDCODED = {
     {type:'translate',prompt:'Translate to Italian:',english:'Can I ask you who gave you this information?',answer:'posso chiederti chi ti ha dato questa informazione',words:['posso','chiederti','chi','ti','ha','dato','questa','informazione','dove','quando']},
     {type:'fill_blank',prompt:'___ dei due preferisci — il rosso o il blu? (Which of the two do you prefer — the red or the blue?)',hint:'The question word for "which one" (from a specific set)',answer:'quale',placeholder:'Type the question word...'},
   ],
+
+  // P4 — Imperfetto
+  imperfetto:[
+    {type:'multiple_choice',prompt:'Which ending does "io" take for -ARE verbs in the imperfetto?',options:['-avo','-evo','-ivo','-ai'],answer:'-avo',english:'imperfetto -are ending',hint:'Parlavo, mangiavo, lavoravo — all end in -avo for io'},
+    {type:'match_pairs',prompt:'Match the imperfetto forms of "essere"',pairs:[['io','ero'],['tu','eri'],['lui/lei','era'],['noi','eravamo']]},
+    {type:'fill_blank',prompt:'Quando ero bambino, ___ spesso. (When I was a child, I used to play often.)',hint:'"Giocare" imperfetto — io form',answer:'giocavo',english:'I used to play',placeholder:'Type the verb form...'},
+    {type:'multiple_choice',prompt:'Which sentence uses the imperfetto correctly for a habitual past action?',options:['Ogni estate andavo al mare.','Ogni estate sono andato al mare.','Ogni estate andrò al mare.','Ogni estate vado al mare.'],answer:'Ogni estate andavo al mare.',english:'Every summer I used to go to the sea',hint:'Imperfetto = repeated/habitual actions in the past'},
+    {type:'multiple_choice',prompt:'When do you use passato prossimo instead of imperfetto?',options:['For background descriptions','For repeated habits','For a completed event at a specific moment','For ongoing states in the past'],answer:'For a completed event at a specific moment',hint:'Passato prossimo = completed action; imperfetto = ongoing state or habit'},
+    {type:'fill_blank',prompt:'Mentre ___ la TV, ha telefonato Marco. (While I was watching TV, Marco called.)',hint:'"Guardare" imperfetto — io form (background action)',answer:'guardavo',english:'I was watching',placeholder:'Type the verb form...'},
+    {type:'translate',prompt:'Translate to Italian:',english:'When I was young I used to read a lot',answer:'quando ero giovane leggevo molto',words:['quando','ero','giovane','leggevo','molto','sempre','da','bambino','spesso']},
+    {type:'multiple_choice',prompt:'Which is the imperfetto of "avere" for "loro"?',options:['avevano','ebbero','hanno','avranno'],answer:'avevano',english:'they had (imperfetto)',hint:'Imperfetto of avere: avevo, avevi, aveva, avevamo, avevate, avevano'},
+    {type:'fill_blank',prompt:'Il sole ___ e gli uccelli cantavano. (The sun was shining and the birds were singing.)',hint:'"Splendere" imperfetto — lui/lei form (describes a scene)',answer:'splendeva',english:'was shining',placeholder:'Type the verb form...'},
+    {type:'translate',prompt:'Translate to Italian:',english:'She used to live in Rome but last year she moved to Milan',answer:"abitava a roma ma l'anno scorso si è trasferita a milano",words:['abitava','a','roma','ma',"l'anno",'scorso','si','è','trasferita','a','milano','viveva']},
+  ],
+
+  // P5 — Reflexive Verbs
+  reflexive_verbs:[
+    {type:'multiple_choice',prompt:'Which reflexive pronoun goes with "io" (I)?',options:['si','ti','mi','ci'],answer:'mi',english:'myself',hint:'mi lavo = I wash myself — "mi" is the first-person reflexive'},
+    {type:'match_pairs',prompt:'Match reflexive pronouns to subject pronouns',pairs:[['io','mi'],['tu','ti'],['lui/lei','si'],['noi','ci']]},
+    {type:'fill_blank',prompt:'Ogni mattina ___ alle sette. (Every morning I get up at seven.)',hint:'"Alzarsi" — io form: mi + alzo',answer:'mi alzo',english:'I get up',placeholder:'Type the verb form...'},
+    {type:'multiple_choice',prompt:'How do you say "She washes herself" in Italian?',options:['Lei lava','Lei si lava','Lei la lava','Si lei lava'],answer:'Lei si lava',english:'She washes herself',hint:'Reflexive pronoun goes BEFORE the conjugated verb'},
+    {type:'translate',prompt:'Translate to Italian:',english:'What is your name? (how do you call yourself?)',answer:'come ti chiami',words:['come','ti','chiami','si','chiama','mi','chiamo','voi','chiamate']},
+    {type:'fill_blank',prompt:'Marco ___ con il sapone. (Marco washes himself with soap.)',hint:'"Lavarsi" — lui/lei form: si + lava',answer:'si lava',english:'washes himself',placeholder:'Type the verb form...'},
+    {type:'multiple_choice',prompt:'What does "vestirsi" mean?',options:['To undress','To dress oneself','To dress someone else','To try on clothes'],answer:'To dress oneself',english:'to dress oneself',hint:'Vestire = to dress someone; vestirsi = to dress oneself'},
+    {type:'fill_blank',prompt:'Come ___ ? (How are you feeling?)',hint:'"Sentirsi" — tu form: ti + senti',answer:'ti senti',english:'do you feel',placeholder:'Type the verb form...'},
+    {type:'translate',prompt:'Translate to Italian:',english:'We get up early and we get dressed quickly',answer:'ci alziamo presto e ci vestiamo velocemente',words:['ci','alziamo','presto','e','vestiamo','velocemente','ci','svegliamo','laviamo']},
+    {type:'fill_blank',prompt:'Come ___ ? (What is your name? — literally: how do you call yourself?)',hint:'"Chiamarsi" — lei/formal form: si + chiama',answer:'si chiama',english:'is he/she called',placeholder:'Type the verb form...'},
+  ],
+
+  // P7 — Fare Expressions
+  fare_expressions:[
+    {type:'info_card',title:'Fare — the Swiss-army-knife verb',content:'<strong>Fare</strong> (to do / to make) appears in dozens of fixed expressions where English uses different verbs.<br><br>You can\'t always translate literally — learn these phrases as chunks!<br><br><strong>fare colazione</strong> = to have breakfast · <strong>fare una domanda</strong> = to ask a question · <strong>fa caldo</strong> = it\'s hot'},
+    {type:'multiple_choice',prompt:'What does "fare colazione" mean?',options:['To make a cake','To have breakfast','To do the cooking','To make coffee'],answer:'To have breakfast',hint:'"Colazione" = breakfast — you "make" (do) breakfast in Italian'},
+    {type:'multiple_choice',prompt:'What does "fare una passeggiata" mean?',options:['To take a shower','To go for a walk','To make a trip','To do exercise'],answer:'To go for a walk',hint:'"Passeggiata" = a stroll — Italians love the evening passeggiata'},
+    {type:'fill_blank',prompt:'Voglio ___ una domanda. (I want to ask a question.)',hint:'"fare" in the infinitive — used for asking questions',answer:'fare',placeholder:'Type the verb...'},
+    {type:'multiple_choice',prompt:'What does "fare la spesa" mean?',options:['To spend money','To go grocery shopping','To pay the bill','To do the accounts'],answer:'To go grocery shopping',hint:'"La spesa" = the shopping/expense — "fare la spesa" is specifically grocery shopping'},
+    {type:'match_pairs',prompt:'Match fare expressions to meanings',pairs:[['fa caldo','it\'s hot'],['fa freddo','it\'s cold'],['fare finta di','to pretend'],['fare il tifo per','to support a team']]},
+    {type:'fill_blank',prompt:'Oggi ___ molto caldo. (Today it\'s very hot.)',hint:'"fa" — third-person singular of fare, used for weather',answer:'fa',placeholder:'Type the verb form...'},
+    {type:'multiple_choice',prompt:'What does "fare un errore" mean?',options:['To correct a mistake','To find an error','To make a mistake','To avoid an error'],answer:'To make a mistake',hint:'"Errore" = error/mistake — you "do/make" a mistake in Italian'},
+    {type:'fill_blank',prompt:'Non ce la ___! (I can\'t manage it!)',hint:'"Farcela" in present tense — io form: non ce la ___',answer:'faccio',placeholder:'Type the verb form...'},
+    {type:'multiple_choice',prompt:'What does "farsi vivo" mean?',options:['To come alive','To get in touch / show up','To make a living','To stay healthy'],answer:'To get in touch / show up',hint:'"Fatti vivo!" = Get in touch! Let me hear from you!'},
+    {type:'translate',prompt:'Translate to Italian:',english:'She pretends she doesn\'t understand',answer:'fa finta di non capire',words:['fa','finta','di','non','capire','fare','sembra','capisce','finge']},
+  ],
 };
 
 const COURSE = [
@@ -681,6 +733,9 @@ const COURSE = [
       {id:'adjectives',   emoji:'✏️',  title:'Adjectives',        desc:'Agreement & placement rules'},
       {id:'negation',     emoji:'🚫',  title:'Negation',          desc:'Non, niente, nessuno, mai...'},
       {id:'questions',    emoji:'❓',  title:'Asking Questions',  desc:'Chi, cosa, dove, quando...'},
+      {id:'imperfetto',      emoji:'⏪',  title:'Imperfetto',       desc:'Parlavo, ero, facevo...'},
+      {id:'reflexive_verbs', emoji:'🔄',  title:'Reflexive Verbs',  desc:'Alzarsi, lavarsi, vestirsi...'},
+      {id:'fare_expressions',emoji:'🤌',  title:'Fare Expressions', desc:'Fare colazione, fare la spesa...'},
     ]
   },
   {
@@ -732,24 +787,27 @@ const COURSE = [
 
 // ── Difficulty badge helper ───────────────────────────────────
 const LESSON_DIFF = {
-  // A1
+  // A1 — absolute beginner; first words and sounds
   greetings:'a1', numbers:'a1', alphabet:'a1', phrases:'a1', colors:'a1', days:'a1', family:'a1',
-  // A2
+  // A2 — elementary; everyday topics (food, home, time, simple descriptions)
   food:'a2', time:'a2', drinks:'a2', cafe:'a2', fruits:'a2', vegetables:'a2', nationalities:'a2',
   house:'a2', clothing:'a2', months:'a2', seasons:'a2', classroom:'a2', weather:'a2', animals:'a2',
-  shopping:'a2', body:'a2', emotions:'a2', descriptions:'a2', transport:'a2',
-  // B1
-  travel:'b1', verbs:'b1', present_tense:'b1', cooking:'b1', hotel:'b1', nature:'b1', sports:'b1',
-  hobbies:'b1', jobs:'b1', personality:'b1', geography:'b1', celebrations:'b1', places:'b1',
-  directions:'b1', healthcare:'b1', finance:'b1', education:'b1',
-  // B2
+  shopping:'a2', body:'a2', emotions:'a2', descriptions:'a2',
+  cooking:'a2', celebrations:'a2',
+  // B1 — intermediate; navigating real situations, opinions, extended vocabulary
+  travel:'b1', verbs:'b1', present_tense:'b1', hotel:'b1', nature:'b1', sports:'b1',
+  hobbies:'b1', jobs:'b1', personality:'b1', geography:'b1', places:'b1',
+  directions:'b1', transport:'b1', finance:'b1', education:'b1',
+  imperfetto:'b1', reflexive_verbs:'b1', fare_expressions:'b1',
+  // B2 — upper-intermediate; abstract topics, grammar complexity, professional contexts
   past_tense:'b2', future:'b2', modal_verbs:'b2', pronouns:'b2', prepositions:'b2', adjectives:'b2',
   negation:'b2', questions:'b2', career:'b2', technology:'b2', media:'b2', environment:'b2',
   art:'b2', music:'b2', history:'b2', politics:'b2', housing:'b2', food_culture:'b2', science:'b2',
-  // C1
+  healthcare:'b2',
+  // C1 — advanced; nuanced expression, cultural depth, complex grammar
   idioms:'c1', subjunctive:'c1', law:'c1', cinema:'c1', literature:'c1', customs:'c1',
   architecture:'c1', fashion:'c1', sports_culture:'c1', regional:'c1',
-  // C2
+  // C2 — mastery; sophisticated style, dialectal variation, near-native fluency
   conditional:'c2', formal_writing:'c2', debate:'c2', philosophy:'c2', proverbs:'c2',
   advanced_verbs:'c2', business:'c2', dialects:'c2',
 };

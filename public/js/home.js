@@ -3,15 +3,58 @@ function calcStreak() {
   const stats = loadStats();
   const dates = new Set(Object.values(stats.lessons || {}).map(l => l.lastPlayed).filter(Boolean));
   if (dates.size === 0) return 0;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA');
   let streak = 0;
   let d = new Date(today);
   while (true) {
-    const ds = d.toISOString().slice(0, 10);
+    const ds = d.toLocaleDateString('en-CA');
     if (dates.has(ds)) { streak++; d.setDate(d.getDate() - 1); }
     else break;
   }
   return streak;
+}
+
+// ── Streak Grace Period (L5) ──────────────────────────────────
+function daysSinceLastActivity() {
+  const stats = loadStats();
+  const dates = Object.values(stats.lessons || {}).map(l => l.lastPlayed).filter(Boolean);
+  if (dates.length === 0) return null;
+  const lastDate = dates.sort().at(-1);
+  const today = new Date().toLocaleDateString('en-CA');
+  return Math.round((new Date(today) - new Date(lastDate)) / 86400000);
+}
+
+function restoreStreak() {
+  const stats = loadStats();
+  if ((stats.totalXP || 0) < 50) {
+    showHomeError('Not enough XP to restore your streak (need 50 XP).');
+    return;
+  }
+  stats.totalXP -= 50;
+  const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
+  const RESTORE_KEY = '__streak_restore__';
+  if (!stats.lessons[RESTORE_KEY]) stats.lessons[RESTORE_KEY] = { completions: 1, bestAccuracy: 0 };
+  stats.lessons[RESTORE_KEY].lastPlayed = yesterday;
+  stats.streakMissedDays = 0;
+  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  updateHomeProgress();
+}
+
+// ── H11: inline error instead of alert() ─────────────────────
+function showHomeError(msg) {
+  let el = document.getElementById('home-inline-error');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'home-inline-error';
+    el.className = 'inline-error';
+    const actions = document.getElementById('home-actions');
+    if (actions) actions.insertAdjacentElement('afterend', el);
+    else document.getElementById('screen-home').appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 // ── Grammar Reference ─────────────────────────────────────────
@@ -20,39 +63,28 @@ function showGrammarRef() { showScreen('grammar'); }
 // ── Daily Review ──────────────────────────────────────────────
 function startDailyReview() {
   const vocab = loadVocab();
-  // Pick words that have been seen but are not yet mastered
-  const due = Object.entries(vocab)
-    .filter(([, v]) => v.seen > 0 && vocabLevel(v) < 4)
-    .sort((a, b) => {
-      // Prioritise: low level first, then least recently seen
-      const lvlDiff = vocabLevel(a[1]) - vocabLevel(b[1]);
-      if (lvlDiff !== 0) return lvlDiff;
-      return (a[1].lastSeen || '') < (b[1].lastSeen || '') ? -1 : 1;
-    })
-    .slice(0, 10)
-    .map(([word]) => word);
+  // M1: use SRS-scheduled getDueWords() — only show words whose nextReview is today or overdue
+  const dueEntries = getDueWords().filter(v => v.seen > 0);
+  const due = dueEntries.slice(0, 10).map(v => v.word);
 
   if (due.length < 2) {
-    alert('Complete a few lessons first to unlock Daily Review!');
+    showHomeError('Complete a few lessons first to unlock Daily Review!'); // H11
     return;
   }
 
-  // Build simple MC exercises from due words
-  const allWords = Object.keys(vocab);
-  const exercises = due.slice(0, 8).map(word => {
-    const distractors = shuffle(allWords.filter(w => w !== word)).slice(0, 3);
-    return {
-      type: 'multiple_choice',
-      prompt: `Which is the Italian word shown below?\n"${word}"`,
-      options: shuffle([word, ...distractors]),
-      answer: word,
-      hint: `You've seen this word ${vocab[word].seen} time${vocab[word].seen !== 1 ? 's' : ''}`
-    };
-  });
+  // H2: dictation exercises — TTS plays word, user types what they hear
+  const exercises = due.slice(0, 8).map(word => ({
+    type: 'listening',
+    prompt: 'Listen and type the Italian word you hear:',
+    audio: word,
+    answer: word,
+    hint: `You've seen this word ${vocab[word].seen} time${vocab[word].seen !== 1 ? 's' : ''}`
+  }));
 
   currentTopic = 'daily_review';
   currentExercises = exercises;
   currentIndex = 0; xp = 0; correct = 0; answered = false; mistakes = [];
+  initHearts(); // H10: was missing — stale hearts from previous lesson
   showScreen('lesson');
   document.getElementById('progress-fill').style.width = '0%';
   document.getElementById('xp-counter').textContent = '0 XP';
@@ -115,13 +147,13 @@ function renderJourneyCard() {
     ${cur.need ? `<div class="jm-bar-track"><div class="jm-bar-fill" style="width:${pct}%;background:${cur.color};"></div></div><div class="jm-bar-label">${doneCount} / ${cur.need} ${cur.label} lessons</div>` : ''}`;
 }
 
-// ── Patch updateHomeProgress to include streak ────────────────
+// ── updateHomeProgress ────────────────────────────────────────
 function updateHomeProgress() {
   const stats = loadStats();
   const vocab = loadVocab();
   const totalXP = stats.totalXP || 0;
   const wordsLearned = Object.values(vocab).filter(v => v.correct >= 1).length;
-  const wordsMastered = Object.values(vocab).filter(v => vocabLevel(v) >= 4).length;
+  const wordsMastered = Object.values(vocab).filter(v => vocabLevel(v) === 'strong').length;
   const streak = calcStreak();
 
   if (totalXP > 0 || wordsLearned > 0) {
@@ -133,14 +165,26 @@ function updateHomeProgress() {
     const actions = document.getElementById('home-actions');
     if (actions) actions.style.display = 'flex';
 
+    // M13: show chip from day 1
     const chip = document.getElementById('streak-chip');
     if (chip) {
-      if (streak >= 2) {
+      if (streak >= 1) {
         chip.style.display = 'inline-flex';
-        document.getElementById('home-streak').textContent = streak;
+        if (streak === 1) {
+          chip.textContent = '🔥 Day 1 — keep it up!';
+        } else {
+          chip.innerHTML = `🔥 <span id="home-streak">${streak}</span> day streak`;
+        }
       } else {
         chip.style.display = 'none';
       }
+    }
+
+    // L5: show streak restore bar if user missed exactly 1 day and has XP
+    const restoreBar = document.getElementById('streak-restore-bar');
+    if (restoreBar) {
+      const missed = daysSinceLastActivity();
+      restoreBar.style.display = (missed === 1 && streak === 0 && totalXP >= 50) ? 'flex' : 'none';
     }
   }
   renderCourseMap();
@@ -149,20 +193,15 @@ function updateHomeProgress() {
 }
 
 // ── Skill-tree unlock logic ────────────────────────────────────
-function isLessonUnlocked(unitIdx, lessonIdx, stats) {
-  const lessonId = COURSE[unitIdx].lessons[lessonIdx].id;
-  if (stats.lessons[lessonId]?.completions > 0) return true;
-  if (unitIdx === 0 && lessonIdx === 0) return true;
-  if (lessonIdx > 0) {
-    const prevId = COURSE[unitIdx].lessons[lessonIdx - 1].id;
-    return !!(stats.lessons[prevId]?.completions > 0);
-  }
-  if (lessonIdx === 0 && unitIdx > 0) {
-    const prevUnit = COURSE[unitIdx - 1];
-    const doneCount = prevUnit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length;
-    return doneCount >= Math.ceil(prevUnit.lessons.length * 0.7);
-  }
-  return false;
+function isUnitUnlocked(unitIdx, stats) {
+  if (unitIdx === 0) return true;
+  const prevUnit = COURSE[unitIdx - 1];
+  const doneCount = prevUnit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length;
+  return doneCount >= Math.ceil(prevUnit.lessons.length * 0.5);
+}
+
+function isLessonUnlocked(unitIdx, _lessonIdx, stats) {
+  return isUnitUnlocked(unitIdx, stats);
 }
 
 // ── Skill-tree course map ──────────────────────────────────────
@@ -179,9 +218,11 @@ function renderCourseMap() {
     const allDone = doneCount === lessons.length;
     const firstUnlocked = isLessonUnlocked(unitIdx, 0, stats);
 
-    // Completed unit: compact dot row
+    // Completed unit — L11: each dot is clickable to replay
     if (allDone) {
-      const dots = lessons.map(() => `<span class="ucr-dot">✓</span>`).join('');
+      const dots = lessons.map(lesson =>
+        `<span class="ucr-dot ucr-dot-replay" onclick="startLesson('${lesson.id}')" title="Replay: ${escHtml(lesson.title)}">✓</span>`
+      ).join('');
       return `<div class="unit-block unit-done">
         <div class="unit-header-bar" style="background:${unit.color};">
           <span class="uhb-title">${unit.title}</span>
@@ -195,7 +236,7 @@ function renderCourseMap() {
     if (!firstUnlocked) {
       const prevUnit = COURSE[unitIdx - 1];
       const prevDone = prevUnit ? prevUnit.lessons.filter(l => stats.lessons[l.id]?.completions > 0).length : 0;
-      const needed = prevUnit ? Math.ceil(prevUnit.lessons.length * 0.7) - prevDone : 0;
+      const needed = prevUnit ? Math.ceil(prevUnit.lessons.length * 0.5) - prevDone : 0;
       const note = needed > 0 ? `Complete ${needed} more in Unit ${unitIdx} to unlock` : 'Almost unlocked!';
       return `<div class="unit-block unit-locked">
         <div class="unit-header-bar unit-header-locked">

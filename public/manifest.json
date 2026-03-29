@@ -1,0 +1,13 @@
+{
+  "name": "Parlami",
+  "short_name": "Parlami",
+  "description": "Learn Italian from real sources — vocabulary, sentences & exercises live from the web.",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#fafaf8",
+  "theme_color": "#2d9b6f",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

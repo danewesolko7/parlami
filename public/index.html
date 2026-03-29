@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#2d9b6f">
 <link rel="manifest" href="/manifest.json">
 <title>Parlami — Learn Italian</title>
@@ -11,98 +11,135 @@
 </head>
 <body>
 
-<!-- HOME -->
-<div id="screen-home" class="screen active">
-  <div class="home-flag">🇮🇹</div>
-  <h1 class="home-title">Parlami</h1>
-  <p class="home-subtitle">Real Italian from real sources.<br>Vocabulary, sentences & exercises — live from the web.</p>
-  <div id="home-stats-bar" style="display:none;gap:12px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;">
-    <span class="streak-chip" id="streak-chip" style="display:none;">🔥 <span id="home-streak">0</span> day streak</span>
-    <span class="stat-chip xp">⭐ <span id="home-xp">0</span> XP</span>
-    <span class="stat-chip" style="background:var(--blue-light);color:var(--blue);cursor:pointer;" onclick="showVocabLibrary()">📚 <span id="home-words">0</span> words learned</span>
-    <span class="stat-chip" style="background:var(--purple-light);color:var(--purple);">✨ <span id="home-mastered">0</span> mastered</span>
-  </div>
-  <div class="home-actions" id="home-actions" style="display:none;">
-    <button class="action-btn review" onclick="startDailyReview()">📋 Daily Review</button>
-    <button class="action-btn grammar" onclick="showGrammarRef()">📐 Grammar Ref</button>
+<!-- ══ HOME TAB ════════════════════════════════════════════════ -->
+<div id="screen-home" class="screen tab-screen active">
+
+  <div class="home-header">
+    <div class="home-header-brand">
+      <span class="home-flag">🇮🇹</span>
+      <div>
+        <h1 class="home-title">Parlami</h1>
+        <p class="home-tagline">Learn Italian</p>
+      </div>
+    </div>
+    <div id="home-streak-badge" class="home-streak-badge" style="display:none;">
+      <span>🔥</span>
+      <span id="home-streak-count">0</span>
+    </div>
   </div>
 
-  <!-- L5: Streak grace-period restore bar -->
-  <div id="streak-restore-bar" style="display:none;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 16px;background:var(--amber-light);border:1.5px solid var(--amber);border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:#6b4a00;">
-    <span style="flex:1;">You missed yesterday — restore your streak for 50 XP?</span>
-    <button onclick="restoreStreak()" style="padding:6px 14px;border:1.5px solid var(--amber);border-radius:99px;background:white;color:#6b4a00;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Restore 🔥 (−50 XP)</button>
+  <div id="home-stats-bar" class="stats-row" style="display:none;">
+    <div class="stat-pill stat-pill-amber">
+      <span class="stat-pill-icon">⭐</span>
+      <div class="stat-pill-body">
+        <span class="stat-pill-value" id="home-xp">0</span>
+        <span class="stat-pill-label">XP</span>
+      </div>
+    </div>
+    <div class="stat-pill stat-pill-blue" onclick="showTab('vocab')" style="cursor:pointer;">
+      <span class="stat-pill-icon">📚</span>
+      <div class="stat-pill-body">
+        <span class="stat-pill-value" id="home-words">0</span>
+        <span class="stat-pill-label">Words</span>
+      </div>
+    </div>
+    <div class="stat-pill stat-pill-purple">
+      <span class="stat-pill-icon">✨</span>
+      <div class="stat-pill-body">
+        <span class="stat-pill-value" id="home-mastered">0</span>
+        <span class="stat-pill-label">Mastered</span>
+      </div>
+    </div>
   </div>
 
-  <!-- L2: Search tools moved above the fold -->
-  <div class="section-label">Look up any Italian word</div>
-  <div class="dict-panel">
-    <div class="dict-row">
-      <input class="custom-input" id="dict-input" placeholder="Type an Italian word..." onkeydown="if(event.key==='Enter')lookupWord()" />
-      <button class="gen-btn" style="background:var(--purple)" onclick="lookupWord()">Look up</button>
+  <div id="streak-restore-bar" class="restore-bar" style="display:none;">
+    <span class="restore-bar-text">You missed yesterday — restore your streak for 50 XP?</span>
+    <button onclick="restoreStreak()" class="restore-bar-btn">Restore 🔥</button>
+  </div>
+
+  <div id="home-actions" style="display:none;">
+    <button class="daily-review-btn" onclick="startDailyReview()">
+      <div class="drb-left">
+        <div class="drb-icon">📋</div>
+        <div class="drb-body">
+          <div class="drb-title">Daily Review</div>
+          <div class="drb-sub" id="drc-sub">Review your scheduled words</div>
+        </div>
+      </div>
+      <span class="drb-arrow">›</span>
+    </button>
+  </div>
+
+  <div class="section-header">Tools</div>
+  <div class="tools-grid">
+    <button class="tool-card" onclick="showScreen('grammar')">
+      <span class="tool-card-icon">📐</span>
+      <span class="tool-card-title">Grammar</span>
+      <span class="tool-card-sub">Reference tables</span>
+    </button>
+    <button class="tool-card" onclick="toggleLookup()">
+      <span class="tool-card-icon">🔍</span>
+      <span class="tool-card-title">Word Lookup</span>
+      <span class="tool-card-sub">Wiktionary</span>
+    </button>
+    <button class="tool-card" onclick="toggleSentences()">
+      <span class="tool-card-icon">💬</span>
+      <span class="tool-card-title">Sentences</span>
+      <span class="tool-card-sub">Real examples</span>
+    </button>
+  </div>
+
+  <div id="lookup-panel" class="collapsible-panel" style="display:none;">
+    <div class="cpanel-title">Look up any Italian word</div>
+    <div class="cpanel-row">
+      <input class="panel-input" id="dict-input" placeholder="Type an Italian word..." onkeydown="if(event.key==='Enter')lookupWord()" />
+      <button class="panel-btn panel-btn-purple" onclick="lookupWord()">Look up</button>
     </div>
     <div class="dict-result" id="dict-result"></div>
     <div class="source-tag" style="margin-top:8px;">📖 Wiktionary definitions</div>
   </div>
 
-  <div class="section-label">Real example sentences</div>
-  <div class="sentences-panel">
-    <div class="custom-row" style="margin-bottom:10px;">
-      <input class="custom-input" id="sent-input" placeholder="Search Italian sentences..." onkeydown="if(event.key==='Enter')searchSentences()" />
-      <button class="gen-btn" style="background:var(--amber)" onclick="searchSentences()">Search</button>
+  <div id="sentences-panel" class="collapsible-panel" style="display:none;">
+    <div class="cpanel-title">Search real sentences</div>
+    <div class="cpanel-row">
+      <input class="panel-input" id="sent-input" placeholder="Search Italian sentences..." onkeydown="if(event.key==='Enter')searchSentences()" />
+      <button class="panel-btn panel-btn-amber" onclick="searchSentences()">Search</button>
     </div>
     <div id="sentences-result"></div>
     <div class="source-tag">💬 Tatoeba — human-written sentences</div>
   </div>
 
+  <div id="home-inline-error"></div>
+
+</div>
+
+<!-- ══ LESSONS TAB ═════════════════════════════════════════════ -->
+<div id="screen-lessons" class="screen tab-screen">
+
+  <div class="screen-top-header">
+    <h2 class="screen-top-title">My Course</h2>
+  </div>
+
   <div id="journey-card" class="journey-card"></div>
 
-  <div id="achievements-section" style="width:100%;margin-bottom:24px;"></div>
-
-  <div class="section-label">Your course</div>
+  <div class="section-header">Your Course</div>
   <div id="course-map" style="width:100%;"></div>
 
-  <div class="section-label">Generate a lesson on any topic</div>
-  <div class="ai-panel">
-    <div class="custom-row">
-      <input class="custom-input" id="custom-topic" placeholder="e.g. sports, music, politics..." />
-      <button class="gen-btn" onclick="startGeneratedLesson()">Generate →</button>
+  <div class="section-header">Generate a Lesson</div>
+  <div class="gen-panel">
+    <div class="cpanel-row">
+      <input class="panel-input" id="custom-topic" placeholder="e.g. sports, music, politics..." />
+      <button class="panel-btn" onclick="startGeneratedLesson()">Generate →</button>
     </div>
     <div class="source-tag">📡 Generated from Wiktionary + Tatoeba</div>
   </div>
 
 </div>
 
-<!-- NO-HEARTS OVERLAY (H1) -->
-<div id="no-hearts-overlay" class="no-hearts-overlay">
-  <div class="no-hearts-card">
-    <div style="font-size:52px">💔</div>
-    <div class="no-hearts-title">Out of hearts!</div>
-    <div class="no-hearts-msg">Take a breath — you can continue with a fresh set.</div>
-    <button class="check-btn" onclick="refillHearts()">Continue →</button>
-    <button class="home-btn" style="margin-top:8px;font-size:14px;padding:10px 20px" onclick="speechSynthesis.cancel();showScreen('home');updateHomeProgress()">End lesson</button>
-  </div>
-</div>
-
-<!-- LESSON -->
-<div id="screen-lesson" class="screen">
-  <div class="lesson-header">
-    <button class="back-btn" onclick="goHome()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    </button>
-    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-    <div class="hearts" id="hearts-display"></div>
-    <div class="xp-badge" id="xp-counter">0 XP</div>
-  </div>
-  <div id="exercise-container"></div>
-</div>
-
-<!-- VOCAB LIBRARY -->
-<div id="screen-vocab" class="screen">
-  <div class="vocab-header">
-    <button class="back-btn" onclick="goHome()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    </button>
-    <div class="vocab-title">My Vocabulary</div>
+<!-- ══ VOCABULARY TAB ══════════════════════════════════════════ -->
+<div id="screen-vocab" class="screen tab-screen">
+  <div class="screen-top-header">
+    <h2 class="screen-top-title">My Vocabulary</h2>
     <div id="vocab-count" style="font-size:13px;color:var(--text-muted);font-weight:500;"></div>
     <button id="vocab-practice-btn" class="vocab-practice-btn" style="display:none" onclick="startVocabPractice()">Practice ▶</button>
   </div>
@@ -116,17 +153,54 @@
   <div id="vocab-grid" class="vocab-grid"></div>
 </div>
 
-<!-- GRAMMAR REFERENCE -->
-<div id="screen-grammar" class="screen">
-  <div class="grammar-header">
+<!-- ══ ACHIEVEMENTS TAB ════════════════════════════════════════ -->
+<div id="screen-achievements" class="screen tab-screen">
+  <div class="screen-top-header">
+    <h2 class="screen-top-title">Achievements</h2>
+    <div id="ach-count-label" style="font-size:13px;color:var(--text-muted);font-weight:500;"></div>
+  </div>
+  <div id="achievements-section" style="width:100%;"></div>
+</div>
+
+<!-- ══ PROFILE TAB ═════════════════════════════════════════════ -->
+<div id="screen-profile" class="screen tab-screen">
+  <div id="profile-content"></div>
+</div>
+
+<!-- ══ NO-HEARTS OVERLAY ═══════════════════════════════════════ -->
+<div id="no-hearts-overlay" class="no-hearts-overlay">
+  <div class="no-hearts-card">
+    <div style="font-size:52px">💔</div>
+    <div class="no-hearts-title">Out of hearts!</div>
+    <div class="no-hearts-msg">Take a breath — you can continue with a fresh set.</div>
+    <button class="check-btn" onclick="refillHearts()">Continue →</button>
+    <button class="home-btn" style="margin-top:8px;font-size:14px;padding:10px 20px" onclick="speechSynthesis.cancel();showTab('home')">End lesson</button>
+  </div>
+</div>
+
+<!-- ══ LESSON (overlay — no bottom nav) ═══════════════════════ -->
+<div id="screen-lesson" class="screen overlay-screen">
+  <div class="lesson-header">
     <button class="back-btn" onclick="goHome()">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
     </button>
-    <div class="grammar-title">Grammar Reference</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="hearts" id="hearts-display"></div>
+    <div class="xp-badge" id="xp-counter">0 XP</div>
   </div>
-  <!-- L9: grammar search -->
+  <div id="exercise-container"></div>
+</div>
+
+<!-- ══ GRAMMAR REFERENCE (overlay) ════════════════════════════ -->
+<div id="screen-grammar" class="screen overlay-screen">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="showTab('home')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="overlay-title">Grammar Reference</div>
+  </div>
   <div style="width:100%;margin-bottom:14px;">
-    <input class="custom-input gram-search-input" id="gram-search" placeholder="Search grammar sections..." oninput="filterGrammar(this.value)" style="width:100%;" />
+    <input class="panel-input gram-search-input" id="gram-search" placeholder="Search grammar sections..." oninput="filterGrammar(this.value)" style="width:100%;" />
   </div>
 
   <div class="gram-section" id="grammar-presente">
@@ -223,6 +297,7 @@
       <tr><td class="gram-it">dovere</td><td>must/to have to</td><td class="gram-it">devo</td><td class="gram-it">devi</td><td class="gram-it">deve</td><td class="gram-it">dobbiamo</td><td class="gram-it">dovete</td><td class="gram-it">devono</td></tr>
     </table>
   </div>
+
   <div class="gram-section" id="gram-questions">
     <h3>Asking Questions</h3>
     <p>Italian forms yes/no questions with <strong>rising intonation only</strong> — no verb inversion needed.</p>
@@ -242,18 +317,18 @@
   </div>
 </div>
 
-<!-- MISTAKE REVIEW -->
-<div id="screen-review" class="screen">
-  <div class="review-header">
-    <div class="review-title">Mistake Review</div>
-    <div class="review-subtitle">Go over what you missed before finishing</div>
+<!-- ══ MISTAKE REVIEW (overlay) ═══════════════════════════════ -->
+<div id="screen-review" class="screen overlay-screen">
+  <div class="overlay-header">
+    <div class="overlay-title">Mistake Review</div>
+    <div class="overlay-subtitle">Go over what you missed before finishing</div>
   </div>
   <div id="mistake-list" class="mistake-list"></div>
   <button class="check-btn next" style="margin-top:8px" onclick="finishReview()">Continue →</button>
 </div>
 
-<!-- COMPLETE -->
-<div id="screen-complete" class="screen">
+<!-- ══ LESSON COMPLETE (overlay) ══════════════════════════════ -->
+<div id="screen-complete" class="screen overlay-screen">
   <div class="complete-emoji">🎉</div>
   <div class="complete-title">Lesson complete!</div>
   <div class="complete-stats">
@@ -261,8 +336,32 @@
     <div class="stat-chip acc" id="final-acc">0% correct</div>
   </div>
   <p style="color:var(--text-muted);font-size:14px;">Consistency builds fluency — keep going!</p>
-  <button class="home-btn" onclick="goHome()">Back to lessons</button>
+  <button class="home-btn" onclick="showTab('home')">Back to lessons</button>
 </div>
+
+<!-- ══ BOTTOM NAVIGATION ════════════════════════════════════════ -->
+<nav id="bottom-nav">
+  <button class="nav-tab active" onclick="showTab('home')" data-tab="home">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="nav-tab" onclick="showTab('lessons')" data-tab="lessons">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    <span>Lessons</span>
+  </button>
+  <button class="nav-tab" onclick="showTab('vocab')" data-tab="vocab">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Vocabulary</span>
+  </button>
+  <button class="nav-tab" onclick="showTab('achievements')" data-tab="achievements">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+    <span>Achievements</span>
+  </button>
+  <button class="nav-tab" onclick="showTab('profile')" data-tab="profile">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profile</span>
+  </button>
+</nav>
 
 <script>
 function filterGrammar(q) {
@@ -283,5 +382,6 @@ function filterGrammar(q) {
 <script src="js/lesson.js"></script>
 <script src="js/vocab.js"></script>
 <script src="js/home.js"></script>
+<script src="js/nav.js"></script>
 </body>
 </html>

@@ -158,26 +158,35 @@ function updateHomeProgress() {
 
   if (totalXP > 0 || wordsLearned > 0) {
     const bar = document.getElementById('home-stats-bar');
-    bar.style.display = 'flex';
-    document.getElementById('home-xp').textContent = totalXP;
-    document.getElementById('home-words').textContent = wordsLearned;
-    document.getElementById('home-mastered').textContent = wordsMastered;
+    if (bar) bar.style.display = 'flex';
+    const xpEl = document.getElementById('home-xp');
+    if (xpEl) xpEl.textContent = totalXP;
+    const wordsEl = document.getElementById('home-words');
+    if (wordsEl) wordsEl.textContent = wordsLearned;
+    const masteredEl = document.getElementById('home-mastered');
+    if (masteredEl) masteredEl.textContent = wordsMastered;
     const actions = document.getElementById('home-actions');
-    if (actions) actions.style.display = 'flex';
+    if (actions) actions.style.display = 'block';
 
-    // M13: show chip from day 1
-    const chip = document.getElementById('streak-chip');
-    if (chip) {
+    // Streak badge in header
+    const badge = document.getElementById('home-streak-badge');
+    if (badge) {
+      const countEl = document.getElementById('home-streak-count');
       if (streak >= 1) {
-        chip.style.display = 'inline-flex';
-        if (streak === 1) {
-          chip.textContent = '🔥 Day 1 — keep it up!';
-        } else {
-          chip.innerHTML = `🔥 <span id="home-streak">${streak}</span> day streak`;
-        }
+        badge.style.display = 'flex';
+        if (countEl) countEl.textContent = streak === 1 ? '1d' : streak + 'd streak';
       } else {
-        chip.style.display = 'none';
+        badge.style.display = 'none';
       }
+    }
+
+    // Update daily review subtitle with due word count
+    const drcSub = document.getElementById('drc-sub');
+    if (drcSub) {
+      const dueCount = getDueWords().filter(v => v.seen > 0).length;
+      drcSub.textContent = dueCount > 0
+        ? `${Math.min(dueCount, 8)} word${dueCount !== 1 ? 's' : ''} due for review`
+        : 'No words due — keep learning!';
     }
 
     // L5: show streak restore bar if user missed exactly 1 day and has XP
@@ -189,7 +198,6 @@ function updateHomeProgress() {
   }
   renderCourseMap();
   renderJourneyCard();
-  renderAchievements();
 }
 
 // ── Skill-tree unlock logic ────────────────────────────────────
